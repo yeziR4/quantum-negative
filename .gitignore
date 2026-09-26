@@ -18,13 +18,22 @@ __pycache__/
 venv/
 
 # ---- scratch output from runs -------------------------------------------
+# Every directory a script writes regenerable output into. If you add a script
+# that writes somewhere new, add it here AND to EXCLUDE_DIRS in make_bundle.py —
+# `notebook_output_repeat/` (the notebook's reproducibility comparison) was
+# committed and shipped once because nobody listed it.
 smoke_outputs/
 outputs/
 web_output/
 notebook_output/
+notebook_output_repeat/
 _verify_a/
 _verify_b/
 _verify_c/
 _mock_output.json
 _mock_upload.bin
 webapp-test.log
+
+# ---- distribution artifacts ---------------------------------------------
+# Built by make_bundle.py; regenerate rather than commit.
+dist/

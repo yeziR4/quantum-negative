@@ -29,16 +29,27 @@ DIST = os.path.join(HERE, "dist")
 # Never ship these, whatever the ignore rules say.
 EXCLUDE_NAMES = {".moth_api_key"}
 EXCLUDE_DIRS = {"__pycache__", ".git", "dist", "web_output", "notebook_output",
-                "smoke_outputs", "_verify_a", "_verify_b", "_verify_c",
+                "notebook_output_repeat", "smoke_outputs",
+                "_verify_a", "_verify_b", "_verify_c",
                 ".venv", "venv"}
 EXCLUDE_SUFFIXES = (".pyc", ".pyo")
+
+# Default-deny at the top level: only these directories ship. A scratch
+# directory created by some future script therefore cannot leak into the bundle
+# merely because nobody remembered to ignore it — which is exactly how
+# `notebook_output_repeat/` (the notebook's reproducibility-comparison output)
+# first got in, inflating the archive from ~2.1 MB to ~3.6 MB.
+SHIP_DIRS = {"demo"}
+
+# Warn if the archive grows past this: a surprise here means scratch is leaking.
+SIZE_WARN_KIB = 2500
 
 # These must be present or the bundle is not a submission.
 REQUIRED = [
     "README.md", "SUBMISSION.md", "NOTES.md",
     "QUANTUM_NEGATIVE.ipynb", "webapp.py", "game.py", "pipeline.py", "qsim.py",
     "synth.py", "film.py", "checks.py", "moth_client.py", "smoke_test.py",
-    "build_notebook.py",
+    "build_notebook.py", "make_bundle.py",
     "test_qsim.py", "verify_pipeline.py", "verify_notebook.py",
     "verify_webapp.py", "verify_game.py", "verify_mock_atlas.py",
     "demo/quantum_negative.mp4", "demo/quantum_negative.wav",
@@ -48,17 +59,30 @@ REQUIRED = [
 
 
 def iter_files() -> list[str]:
-    """Every file that belongs in the bundle, relative to HERE."""
+    """Every file that belongs in the bundle, relative to HERE.
+
+    Default-deny: top-level directories must be listed in SHIP_DIRS to be walked
+    at all, so newly created scratch cannot silently join the submission.
+    """
     out: list[str] = []
-    for root, dirs, files in os.walk(HERE):
-        dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
-        for name in files:
+    for name in sorted(os.listdir(HERE)):
+        full = os.path.join(HERE, name)
+        if os.path.isfile(full):
             if name in EXCLUDE_NAMES or name.endswith(EXCLUDE_SUFFIXES):
                 continue
             if name.endswith(".zip"):
-                continue          # never nest a previous bundle
-            rel = os.path.relpath(os.path.join(root, name), HERE)
-            out.append(rel.replace(os.sep, "/"))
+                continue                      # never nest a previous bundle
+            out.append(name)
+            continue
+        if not os.path.isdir(full) or name not in SHIP_DIRS:
+            continue
+        for root, dirs, files in os.walk(full):
+            dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
+            for fname in files:
+                if fname in EXCLUDE_NAMES or fname.endswith(EXCLUDE_SUFFIXES):
+                    continue
+                rel = os.path.relpath(os.path.join(root, fname), HERE)
+                out.append(rel.replace(os.sep, "/"))
     return sorted(out)
 
 
@@ -121,13 +145,20 @@ def build() -> int:
         json.dump(manifest, fh, indent=2, sort_keys=True)
 
     total = sum(v["bytes"] for v in manifest["files"].values())
+    archive_kib = os.path.getsize(zip_path) / 1024
     print(f"bundle    : {zip_path}")
     print(f"manifest  : {manifest_path}")
     print(f"files     : {len(files)}  ({total/1024:.1f} KiB uncompressed)")
-    print(f"archive   : {os.path.getsize(zip_path)/1024:.1f} KiB")
+    print(f"archive   : {archive_kib:.1f} KiB")
     print(f"sha256    : {sha256(zip_path)}")
+    print(f"top-level : {sorted({f.split('/')[0] for f in files})}")
     if missing:
         print(f"\nWARNING: required files missing from the bundle: {missing}")
+        return 1
+    if archive_kib > SIZE_WARN_KIB:
+        print(f"\nWARNING: archive is {archive_kib:.0f} KiB, over the "
+              f"{SIZE_WARN_KIB} KiB budget — scratch may be leaking in. Check "
+              f"the largest entries above.")
         return 1
     print("\nall required files present")
     return 0
