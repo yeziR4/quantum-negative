@@ -21,6 +21,7 @@ correctly, so that a first live call fails only for reasons an API key can fix.
 
 from __future__ import annotations
 
+import io
 import json
 import os
 import socket
@@ -31,7 +32,10 @@ import time
 import urllib.error
 import urllib.request
 import uuid
+import wave
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+import numpy as np
 
 PASS, FAIL = 0, 0
 
@@ -53,6 +57,52 @@ UPLOADED: dict[str, bytes] = {}   # asset_id -> bytes
 JOBS: dict[str, dict] = {}        # job_id -> job
 ENGINE_PROCESS_CALLS: list[dict] = []
 PUT_REQUESTS: list[dict] = []     # what the client sent to the presigned URL
+
+# The media engines the pipeline drives, with their documented input slots,
+# output type and parameter defaults (from the published OpenAPI description).
+MEDIA_ENGINES: dict[str, dict] = {
+    "blur-v1": {
+        "name": "Quantum Blur", "credits": 3, "output": "image",
+        "inputs": {"image": True, "mask": False},
+        "params_schema": {"downscale": {"type": "boolean", "default": True},
+                          "reach": {"type": "number", "default": 0},
+                          "size": {"type": "integer", "default": 1024},
+                          "strength": {"type": "number", "default": 0.5},
+                          "style": {"type": "string", "enum": ["rx", "ry"]}},
+    },
+    "telablur-v1": {
+        "name": "Quantum Teleblur", "credits": 4, "output": "image",
+        "inputs": {"image1": True, "image2": True, "mask": False},
+        "params_schema": {"direction": {"type": "string",
+                                        "enum": ["full", "vertical", "horizontal"]},
+                          "downscale": {"type": "boolean", "default": True},
+                          "size": {"type": "integer", "default": 1024},
+                          "strength": {"type": "number", "default": 0.5}},
+    },
+    "retrocausal-echo-v1": {
+        "name": "Retrocausal Echo", "credits": 6, "output": "audio",
+        "inputs": {"audio": True, "ir": True},
+        "params_schema": {"decay": {"type": "number", "default": 0.9},
+                          "emit": {"type": "string", "enum": ["audio", "map"]},
+                          "mix": {"type": "number", "default": 0.6},
+                          "output_format": {"type": "string",
+                                            "enum": ["pcm_16", "pcm_32", "float_32"]},
+                          "sr": {"type": "integer", "default": 44100}},
+    },
+    "entanglement-shader-v1": {
+        "name": "Entanglement Shader", "credits": 4, "output": "image",
+        "inputs": {},
+        "params_schema": {"absorption": {"type": "number", "default": 0.95},
+                          "incoming_rays": {"type": "integer", "default": 8},
+                          "interaction": {"type": "number", "default": 1},
+                          "layers": {"type": "integer", "default": 2},
+                          "reflectance": {"type": "number", "default": 0.2},
+                          "resolution": {"type": ["integer", "null"]},
+                          "style": {"type": "string",
+                                    "enum": ["peaked", "frustrated", "3-body",
+                                             "constrained"]}},
+    },
+}
 
 API_KEY = "moth_mock_key_for_tests"
 
@@ -114,7 +164,8 @@ class MockAtlas(BaseHTTPRequestHandler):
 
         if path == "/api/v1/engines":
             return self._send(200, {
-                "schema": "about:blank", "count": 2, "next_cursor": None,
+                "schema": "about:blank",
+                "count": 2 + len(MEDIA_ENGINES), "next_cursor": None,
                 "engines": [
                     {"engine_id": "coin-toss-v1", "name": "Coin Toss",
                      "credits_per_run": 1, "input_type": "none",
@@ -125,11 +176,32 @@ class MockAtlas(BaseHTTPRequestHandler):
                      "output_type": "image", "is_async": True,
                      "input_files": [{"name": "image", "required": True}],
                      "enabled": True},
+                ] + [
+                    {"engine_id": eid, "name": spec["name"],
+                     "credits_per_run": spec["credits"],
+                     "input_type": "multipart" if spec["inputs"] else "none",
+                     "output_type": spec["output"], "is_async": True,
+                     "input_files": [{"name": slot, "required": required}
+                                     for slot, required in spec["inputs"].items()]
+                     or None,
+                     "enabled": True}
+                    for eid, spec in MEDIA_ENGINES.items()
                 ],
             })
 
         if path.startswith("/api/v1/engines/"):
             engine_id = path.split("/")[4]
+            if engine_id in MEDIA_ENGINES:
+                spec = MEDIA_ENGINES[engine_id]
+                return self._send(200, {
+                    "engine_id": engine_id, "name": spec["name"],
+                    "params_schema": {"type": "object",
+                                      "props": spec["params_schema"]},
+                    "input_files": [{"name": slot, "required": req}
+                                    for slot, req in spec["inputs"].items()] or None,
+                    "credits_per_run": spec["credits"],
+                    "enabled": True,
+                })
             return self._send(200, {
                 "engine_id": engine_id, "name": engine_id,
                 "params_schema": {"type": "object", "props": {
@@ -259,6 +331,10 @@ class MockAtlas(BaseHTTPRequestHandler):
             # run_quantum feature, and the 403 response must name that feature.
             if body.get("mode") == "qpu":
                 return self._send(403, {"detail": "feature run_quantum required"})
+
+            if engine_id in MEDIA_ENGINES:
+                return self._process_media_engine(engine_id, job_id, body)
+
             counts = {"00000000": 137, "00000001": 129, "11111111": 141,
                       "10101010": 88}
             JOBS[job_id] = {
@@ -279,10 +355,129 @@ class MockAtlas(BaseHTTPRequestHandler):
 
         return self._send(404, {"detail": f"unhandled POST {path}"})
 
+    def _process_media_engine(self, engine_id: str, job_id: str,
+                              body: dict) -> None:
+        """Serve a media engine: validate inputs, transform, return a real file.
+
+        The transformation is deliberately deterministic and visibly different
+        from the input (a gain, a blend, a decay envelope), so the round-trip
+        proves the client uploaded real bytes and consumed real bytes back —
+        rather than merely that a job completed.
+        """
+        spec = MEDIA_ENGINES[engine_id]
+        params = body.get("params") or {}
+        inputs = body.get("input_files") or {}
+
+        missing = [slot for slot, required in spec["inputs"].items()
+                   if required and not inputs.get(slot)]
+        if missing:
+            return self._send(422, {"detail": f"missing required input_files: {missing}"})
+
+        blobs = {}
+        for slot, asset_id in inputs.items():
+            if asset_id not in UPLOADED:
+                return self._send(422, {"detail": f"input {slot} was never uploaded"})
+            blobs[slot] = UPLOADED[asset_id]
+
+        try:
+            if spec["output"] == "image":
+                out_bytes, filename, ctype = self._transform_image(
+                    engine_id, blobs, params)
+            else:
+                out_bytes, filename, ctype = self._transform_audio(
+                    engine_id, blobs, params)
+        except Exception as exc:                        # noqa: BLE001
+            return self._send(500, {"detail": f"engine failed: {exc}"})
+
+        _require_png_or_wav(filename, out_bytes)
+        UPLOADED[f"out-{job_id}"] = out_bytes
+        JOBS[job_id] = {
+            "engine_id": engine_id, "status": "queued", "progress": 0.0,
+            "submitted_at": _now(), "updated_at": _now(), "counts": None,
+            "outputs": [{
+                "slot": "out", "filename": filename, "content_type": ctype,
+                "output_asset_id": None, "size_bytes": len(out_bytes),
+                "url": f"{BASE_URL}/blob/out-{job_id}", "expires_at": _now(),
+            }],
+            "_polls": 0,
+        }
+        return self._send(202, {"job_id": job_id, "status": "queued",
+                                "submitted_at": _now()})
+
+    @staticmethod
+    def _transform_image(engine_id: str, blobs: dict,
+                         params: dict) -> tuple[bytes, str, str]:
+        from PIL import Image
+        strength = float(params.get("strength", 0.5))
+
+        if engine_id == "telablur-v1":
+            a = Image.open(io.BytesIO(blobs["image1"])).convert("L")
+            b = Image.open(io.BytesIO(blobs["image2"])).convert("L")
+            b = b.resize(a.size)
+            out = Image.blend(a, b, max(0.0, min(strength, 1.0)))
+        elif engine_id == "entanglement-shader-v1":
+            res = int(params.get("resolution") or 128)
+            style = params.get("style", "peaked")
+            out = _synthetic_pattern(res, res, style)
+        else:                                            # blur-v1 and friends
+            a = Image.open(io.BytesIO(blobs["image"])).convert("L")
+            gain = 1.0 + 4.0 * (strength - 0.5)
+            out = a.point(lambda p: max(0, min(255, int(p * gain))))
+            # A visible spatial shift proves the returned bytes are the engine's
+            # output and not an echo of the upload.
+            out = out.transform(out.size, Image.AFFINE, (1, 0, 3, 0, 1, 3))
+
+        buf = io.BytesIO()
+        out.save(buf, format="PNG")
+        return buf.getvalue(), f"{engine_id}.png", "image/png"
+
+    @staticmethod
+    def _transform_audio(engine_id: str, blobs: dict,
+                         params: dict) -> tuple[bytes, str, str]:
+        with wave.open(io.BytesIO(blobs["audio"]), "rb") as fh:
+            channels, width, rate = (fh.getnchannels(), fh.getsampwidth(),
+                                     fh.getframerate())
+            frames = np.frombuffer(fh.readframes(fh.getnframes()), dtype="<i2")
+        decay = float(params.get("decay", 0.9))
+        # Apply a decay envelope so the output is measurably not the input.
+        n = len(frames)
+        ramp = np.exp(-(1.0 - 1.0 / max(decay, 1e-3)) * 4.0 * np.arange(n) / max(n, 1))
+        out_frames = (frames.astype(np.float64) * ramp).astype("<i2")
+        buf = io.BytesIO()
+        with wave.open(buf, "wb") as fh:
+            fh.setnchannels(channels)
+            fh.setsampwidth(width)
+            fh.setframerate(rate)
+            fh.writeframes(out_frames.tobytes())
+        return buf.getvalue(), f"{engine_id}.wav", "audio/wav"
+
     def do_PATCH(self) -> None:                     # noqa: N802
         if not self._guard():
             return
         return self._send(200, {})
+
+
+def _synthetic_pattern(w: int, h: int, style: str = "peaked"):
+    """A deterministic pattern for the shader engine's generative output."""
+    from PIL import Image
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float64)
+    xx /= max(w - 1, 1)
+    yy /= max(h - 1, 1)
+    seed = (abs(hash(style)) % 7) + 1
+    field = (np.sin(2 * np.pi * (seed * xx + yy)) +
+             np.cos(2 * np.pi * (xx - seed * yy))) / 2.0
+    data = ((field + 1.0) / 2.0 * 255).astype(np.uint8)
+    return Image.fromarray(data, mode="L")
+
+
+def _require_png_or_wav(filename: str, blob: bytes) -> None:
+    """Fail loudly if a media engine would serve something undecodable."""
+    if filename.endswith(".png"):
+        if blob[:8] != b"\x89PNG\r\n\x1a\n":
+            raise ValueError("image output is not a PNG")
+    elif filename.endswith(".wav"):
+        if blob[:4] != b"RIFF" or blob[8:12] != b"WAVE":
+            raise ValueError("audio output is not a WAV")
 
 
 def _now() -> str:
@@ -367,12 +562,22 @@ def main() -> int:
         print("\n[3] engine discovery")
         engines = client.engines()
         ids = sorted(e["engine_id"] for e in engines)
-        check("GET /engines returns the engine list", ids ==
-              ["coin-toss-v1", "tessa-image-v1"], str(ids))
-        check("pagination terminates when next_cursor is absent", len(engines) == 2)
+        # Assert membership rather than an exact list: the mock also serves the
+        # media engines, and hard-coding a count here broke the moment it did.
+        check("GET /engines returns the primitive engine",
+              "coin-toss-v1" in ids, str(ids))
+        check("GET /engines returns the media engines",
+              {"blur-v1", "telablur-v1", "retrocausal-echo-v1",
+               "entanglement-shader-v1"} <= set(ids), str(ids))
+        check("pagination terminates when next_cursor is absent",
+              len(engines) == len(ids) and len(ids) >= 6, f"{len(ids)} engines")
         schema = client.params_schema("coin-toss-v1")
         check("params_schema is reachable per engine", "props" in schema,
               str(sorted(schema.keys())))
+        media_schema = client.params_schema("blur-v1")
+        check("media engine params_schema declares its documented fields",
+              {"strength", "reach", "style"} <= set((media_schema.get("props") or {})),
+              str(sorted((media_schema.get("props") or {}).keys())))
         cheapest = client.cheap_engines(2)
         check("cheap_engines sorts by credits", cheapest[0][1] == "coin-toss-v1",
               str(cheapest))
@@ -508,6 +713,159 @@ def main() -> int:
         check("media was produced regardless of backend",
               built["audio"].size > 0 and len(built["frames"]) > 0,
               f"{len(built['frames'])} frames")
+
+        print("\n[12] the Atlas MEDIA engines are driven with real files")
+        import engines as media_mod
+        import film
+        import synth
+
+        media = media_mod.MediaEngines(client, strict=True, poll=0.2,
+                                       timeout=20)
+        caps = media.capabilities()
+        check("capabilities are probed from the API, not assumed",
+              all(caps.values()), json.dumps(caps))
+
+        # --- blur-v1: a real PNG must round-trip through the engine.
+        field = film.quantum_field(primitives.probabilities, size=96, blur=1.0)
+        before = media_mod.MediaEngines._encode_png(field)
+        res = media.blur_image(field, strength=0.5)
+        check("blur-v1 ran on Atlas (not a fallback)", res.used, res.reason or "ok")
+        check("blur-v1 names its engine", res.engine == "blur-v1", res.engine)
+        check("blur-v1 returned an array of the right shape",
+              res.value.shape == field.shape, str(res.value.shape))
+        check("blur-v1 output is decodable image data",
+              0.0 <= float(res.value.min()) and float(res.value.max()) <= 1.0,
+              f"range [{res.value.min():.3f}, {res.value.max():.3f}]")
+        check("blur-v1 output differs from its input (bytes really round-tripped)",
+              float(np.abs(np.asarray(res.value) - field).mean()) > 0.01,
+              f"mean abs diff {float(np.abs(np.asarray(res.value) - field).mean()):.4f}")
+        check("the job id is recorded for audit", "job_id" in res.detail,
+              res.detail.get("job_id", "")[:8])
+        check("input and output byte sizes are recorded",
+              res.detail.get("input_bytes", 0) > 0
+              and res.detail.get("output_bytes", 0) > 0,
+              f"{res.detail.get('input_bytes')} -> {res.detail.get('output_bytes')}")
+        # The engine received the uploaded asset, not a local path.
+        call = next((c for c in ENGINE_PROCESS_CALLS
+                     if c["engine_id"] == "blur-v1"), None)
+        check("blur-v1 was submitted with an uploaded asset id",
+              bool(call) and bool((call["body"].get("input_files") or {}).get("image")),
+              str((call or {}).get("body", {}).get("input_files")))
+        check("the blob the engine read is the PNG we sent",
+              UPLOADED.get((call["body"]["input_files"]["image"])) == before)
+
+        # --- telablur-v1: two images.
+        res2 = media.blend_images(field, np.clip(1.0 - field, 0, 1), strength=0.5)
+        check("telablur-v1 ran on Atlas", res2.used, res2.reason or "ok")
+        check("telablur-v1 sent both image slots",
+              len((next((c for c in ENGINE_PROCESS_CALLS
+                         if c["engine_id"] == "telablur-v1"), {})
+                   .get("body", {}).get("input_files") or {})) == 2)
+
+        # --- entanglement-shader-v1: no input files at all.
+        res3 = media.shader_texture(size=64, style="peaked")
+        check("entanglement-shader-v1 ran on Atlas", res3.used, res3.reason or "ok")
+        check("shader returned a texture of the requested size",
+              res3.value.shape == (64, 64), str(res3.value.shape))
+        shader_call = next((c for c in ENGINE_PROCESS_CALLS
+                            if c["engine_id"] == "entanglement-shader-v1"), None)
+        check("shader was submitted with no input_files",
+              bool(shader_call) and not shader_call["body"].get("input_files"))
+
+        # --- retrocausal-echo-v1: real WAV in, real WAV out.
+        audio = synth_buf = np.zeros((2, 2205))
+        t = np.arange(2205) / 22050.0
+        audio[0] = 0.4 * np.sin(2 * np.pi * 220 * t)
+        audio[1] = 0.4 * np.sin(2 * np.pi * 330 * t)
+        ir = synth.make_ir(seed=1, sr=22050, seconds=0.3)
+        res4 = media.convolve_audio(audio, ir, sr=22050, decay=0.9, mix=0.6)
+        check("retrocausal-echo-v1 ran on Atlas", res4.used, res4.reason or "ok")
+        check("audio came back as a stereo buffer",
+              res4.value.ndim == 2 and res4.value.shape[0] == 2,
+              str(res4.value.shape))
+        check("the engine's own sample rate is reported",
+              res4.detail.get("output_sr") == 22050,
+              str(res4.detail.get("output_sr")))
+        check("audio output is not silent",
+              float(np.abs(res4.value).max()) > 0.01,
+              f"peak {float(np.abs(res4.value).max()):.4f}")
+        check("echo received both audio and ir slots",
+              len((next((c for c in ENGINE_PROCESS_CALLS
+                         if c["engine_id"] == "retrocausal-echo-v1"), {})
+                   .get("body", {}).get("input_files") or {})) == 2)
+
+        print("\n[13] fallback is visible, never silent")
+        class _Exhausted(media_mod.MediaEngines):
+            def available(self, engine_id):
+                return False
+
+        soft = _Exhausted(client)
+        soft.probe().setdefault("_probe_error", "simulated outage")
+        out = soft.blur_image(field, local=lambda: np.full_like(field, 0.25))
+        check("unavailable engine falls back instead of raising", not out.used)
+        check("the fallback names the local engine it used",
+              out.engine == "film.quantum_field", out.engine)
+        check("the fallback records why", bool(out.reason), out.reason[:50])
+        check("the fallback still returns usable media",
+              out.value.shape == field.shape)
+
+        # In strict mode the same condition must raise, so a caller that needs
+        # Atlas cannot silently receive local output.
+        strict_media = media_mod.MediaEngines(client, strict=True)
+        strict_media._available = {}
+        try:
+            strict_media.blur_image(field)
+            check("strict mode raises rather than falling back", False,
+                  "no exception")
+        except RuntimeError as exc:
+            check("strict mode raises rather than falling back", True,
+                  str(exc)[:60])
+
+        print("\n[14] the PIPELINE routes its media stages through Atlas")
+        media_soft = media_mod.MediaEngines(client, poll=0.2, timeout=20)
+        pipe2 = pipeline.Pipeline(backend=atlas, media=media_soft, size=96,
+                                  fps=6, sr=22050, frame_repeats=1)
+        built2 = pipe2.build("a prompt with atlas media")
+        prov2 = [p.to_dict() for p in built2["provenance"]] \
+            if "provenance" in built2 else built2["receipt"]["provenance"]
+        by_choice = {p["choice"]: p for p in prov2}
+        check("the receipt records an image-interference stage",
+              "image-interference" in by_choice, str(sorted(by_choice)))
+        if "image-interference" in by_choice:
+            entry = by_choice["image-interference"]
+            check("image interference was produced by blur-v1 on Atlas",
+                  entry["engine"] == "blur-v1" and entry["detail"].get("used_atlas"),
+                  f"{entry['engine']} used_atlas={entry['detail'].get('used_atlas')}")
+            check("the stage is attributed to atlas-media as its source",
+                  entry["source"] == "atlas-media", entry["source"])
+        check("the space-and-decay stage was produced by retrocausal-echo-v1",
+              by_choice.get("space-and-decay", {}).get("engine")
+              in ("retrocausal-echo-v1", "synth.convolve_ir"),
+              str(by_choice.get("space-and-decay", {}).get("engine")))
+        check("media still rendered with route-through enabled",
+              built2["audio"].size > 0 and len(built2["frames"]) > 0,
+              f"{len(built2['frames'])} frames")
+
+        # The same pipeline without `media` must not attribute any MEDIA stage to
+        # Atlas — only the creative budget comes from there.
+        pipe3 = pipeline.Pipeline(backend=atlas, size=96, fps=6, sr=22050,
+                                  frame_repeats=1)
+        built3 = pipe3.build("a prompt without atlas media")
+        prov3 = built3["receipt"]["provenance"]
+        media_choices = {"image-interference", "space-and-decay",
+                         "visual-structure-and-palette",
+                         "instrumentation-and-melody"}
+        media_sources = {p["source"] for p in prov3
+                         if p["choice"] in media_choices}
+        check("without media engines, no media stage claims Atlas attribution",
+              media_sources == {"local-renderers"}, str(sorted(media_sources)))
+        check("with media engines, Atlas owns the interference layer",
+              by_choice.get("image-interference", {}).get("source") == "atlas-media",
+              str(by_choice.get("image-interference", {}).get("source")))
+        check("the local path still records its engine names",
+              any("film." in p["engine"] or "synth." in p["engine"]
+                  for p in prov3),
+              str(sorted({p["engine"].split(" ")[0] for p in prov3})))
     finally:
         server.shutdown()
         server.server_close()

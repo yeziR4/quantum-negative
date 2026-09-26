@@ -173,11 +173,9 @@ Standard library only — no build step, no dependencies, no node_modules.
 
 ## Judging criteria — how this addresses each
 
-**Quality of execution.** **231 automated checks across six suites, all
-passing**: 44 for the quantum core, 44 for the pipeline, 24 for the notebook,
+**Quality of execution.** **266 automated checks across six suites, all passing**: 44 for the quantum core, 44 for the pipeline, 24 for the notebook,
 52 for the web app and game exercised over real HTTP, 24 for the game's
-mechanics, and 43 driving the Atlas API client through its documented protocol
-against a local mock server. Artifacts are validated as real media (ffprobe
+mechanics, and 78 driving the Atlas API client and its media engines through their documented protocol against a local mock server. Artifacts are validated as real media (ffprobe
 confirms H.264 and duration; the MP4 container header is checked; the WAV is
 stereo 16-bit), and the receipt's SHA-256 hashes are verified against the files
 on disk. Known limitations are documented rather than glossed.

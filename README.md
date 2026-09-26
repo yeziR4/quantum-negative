@@ -70,10 +70,10 @@ python verify_pipeline.py       # 44 checks — real, reproducible media
 python verify_notebook.py       # 24 checks — the notebook is valid and executed
 python verify_webapp.py         # 52 checks — the app and game over real HTTP
 python verify_game.py           # 24 checks — the game is quantum and skill-based
-python verify_mock_atlas.py     # 43 checks — the Atlas client's protocol, offline
+python verify_mock_atlas.py     # 78 checks — Atlas client + media engines
 ```
 
-**231 checks, all passing.** Requirements: Python 3.11+, `numpy`, `Pillow`, and `ffmpeg` on `PATH`. The web app itself needs only the standard library. There is no build step.
+**266 checks, all passing.** Requirements: Python 3.11+, `numpy`, `Pillow`, and `ffmpeg` on `PATH`. The web app itself needs only the standard library. There is no build step.
 
 `verify_mock_atlas.py` needs no API key: it stands up a local server implementing
 the documented Atlas endpoints and drives the real client through the full

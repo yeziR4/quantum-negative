@@ -408,10 +408,16 @@ def _pair_mi_from_probs(probs: list[float], a: int, b: int) -> float:
 # ------------------------------------------------------------------- pipeline
 
 class Pipeline:
-    """Prompt -> short film + audio + provenance receipt."""
+    """Prompt -> short film + audio + provenance receipt.
+
+    `media` optionally routes the media stages through the real Atlas engines
+    (see `engines.MediaEngines`). When it is supplied, each stage records in the
+    receipt whether Atlas actually produced that layer or whether the local
+    renderer did — a fallback is never silent.
+    """
 
     def __init__(self, backend=None, size: int = 384, fps: int = 12,
-                 sr: int = 22050, frame_repeats: int = 2):
+                 sr: int = 22050, frame_repeats: int = 2, media=None):
         self.backend = backend or LocalBackend()
         self.size = size
         self.fps = fps
@@ -419,6 +425,7 @@ class Pipeline:
         # Each scene frame is held for `frame_repeats` output frames so a small
         # number of expensive engine calls still yields smooth motion.
         self.frame_repeats = frame_repeats
+        self.media = media
 
     # -- prompt -> seed ---------------------------------------------------
 
@@ -461,6 +468,17 @@ class Pipeline:
         return {"primitives": prim, "notes": notes, "audio": audio,
                 "frames": frames, "receipt": receipt}
 
+    def _media_source(self) -> str:
+        """Who renders the media, as distinct from who supplies the decisions.
+
+        The quantum backend and the media renderer are separate things: an Atlas
+        backend can drive the creative budget while the bundled renderers still
+        draw the frames. Labelling a media stage with the backend's name made an
+        Atlas-quantum/local-media run report `source: atlas`, which reads as
+        "Atlas rendered this". Keeping them distinct is the honest report.
+        """
+        return "atlas-media" if self.media is not None else "local-renderers"
+
     def _compose_audio(self, prim: CreativePrimitives):
         """Two stems: a lead whose timbre the circuit chose, and a pad."""
         spacing = 0.28
@@ -493,19 +511,34 @@ class Pipeline:
                   "lead_notes": len(lead), "pad_notes": len(pad),
                   "spacing_seconds": spacing}
         prov = [Provenance(choice="instrumentation-and-melody",
-                           source=getattr(self.backend, "name", "local-emulator"),
+                           source=self._media_source(),
                            engine="synth.render_fm/render_additive",
                            detail=detail)]
 
         if prim.use_reverb:
             ir = synth.make_ir(seed=prim.seed, sr=self.sr)
-            mix = synth.convolve_ir(mix, ir, wet=0.32)
-            prov.append(Provenance(
-                choice="space-and-decay",
-                source=getattr(self.backend, "name", "local-emulator"),
-                engine="synth.convolve_ir",
-                detail={"ir_seconds": 1.6, "wet": 0.32,
-                        "quantum_decision": "use_reverb=True"}))
+            if self.media is not None:
+                # Route the reverb through Atlas' retrocausal-echo-v1, falling
+                # back to the local convolution if the engine is unavailable.
+                result = self.media.convolve_audio(
+                    mix, ir, sr=self.sr, decay=0.9, mix=0.32,
+                    local=lambda: synth.convolve_ir(mix, ir, wet=0.32))
+                mix = result.value
+                prov.append(Provenance(
+                    choice="space-and-decay",
+                    source="atlas-media" if result.used else "local-renderers",
+                    engine=result.engine,
+                    detail={**result.detail, "used_atlas": result.used,
+                            "fallback_reason": result.reason,
+                            "quantum_decision": "use_reverb=True"}))
+            else:
+                mix = synth.convolve_ir(mix, ir, wet=0.32)
+                prov.append(Provenance(
+                    choice="space-and-decay",
+                    source="local-renderers",
+                    engine="synth.convolve_ir",
+                    detail={"ir_seconds": 1.6, "wet": 0.32,
+                            "quantum_decision": "use_reverb=True"}))
 
         mix = synth.apply_decay(mix, tail=0.985)
         mix = synth.normalise(mix)
@@ -527,6 +560,25 @@ class Pipeline:
         """
         size = self.size
         field = film.quantum_field(prim.probabilities, size=size, blur=1.0)
+
+        media_prov: list[Provenance] = []
+        if self.media is not None:
+            # Route the interference layer through Atlas' blur-v1, then the
+            # two-image blend through telablur-v1. Both fall back to the local
+            # renderers if the engines are not reachable, and either way the
+            # receipt records which path produced the layer.
+            blurred = self.media.blur_image(
+                field, strength=prim.blur_strength, reach=prim.blur_reach,
+                style="rx", size=size,
+                local=lambda: field)
+            field = blurred.value
+            media_prov.append(Provenance(
+                choice="image-interference",
+                source="atlas-media" if blurred.used else "local-renderers",
+                engine=blurred.engine,
+                detail={**blurred.detail, "used_atlas": blurred.used,
+                        "fallback_reason": blurred.reason}))
+
         smooth = film.smooth(field, radius=9.0)
         corr = film.correlation_field(
             getattr(prim, "pair_mutual_information_bits", []) or [0.0],
@@ -562,10 +614,11 @@ class Pipeline:
                 repeated = [blended] * self.frame_repeats
                 frames.extend(repeated)
 
-        prov = [Provenance(
+        prov = media_prov + [Provenance(
             choice="visual-structure-and-palette",
-            source=getattr(self.backend, "name", "local-emulator"),
-            engine="film.quantum_field / readout_texture / entangle_frames",
+            source=self._media_source(),
+            engine=("film.quantum_field / readout_texture / entangle_frames"
+                    + (" / telablur-v1" if self.media is not None else "")),
             detail={"scenes": prim.scene_count,
                     "scene_pacing": prim.scene_pacing,
                     "blur_strength": prim.blur_strength,

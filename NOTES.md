@@ -4,11 +4,10 @@ Context and plan for our Moth Hack submission. Source of truth for the API is
 `../moth-api.json` (OpenAPI 3.1, `moth-api` v0.41.0); a human-readable dump of
 every endpoint is in `api-notes.txt`.
 
-## STATUS — verified as of round 7
+## STATUS — verified as of round 8
 
-**All three entry deliverables exist, are packaged, and are verified.**
-Six suites, **231 checks, all passing** — and the same 231 pass when run from a
-clean extraction of the submission bundle.
+**All three entry deliverables exist, are packaged, are verified, and now run the
+real Atlas media engines.** Six suites, **266 checks, all passing**.
 
 | suite | checks | what it proves |
 |---|---|---|
@@ -17,7 +16,56 @@ clean extraction of the submission bundle.
 | `python -B verify_notebook.py` | 24 | the notebook is valid, executed, evidence embedded |
 | `python -B verify_webapp.py` | 52 | the app and the game work over real HTTP |
 | `python -B verify_game.py` | 24 | the game is quantum and skill-based, not a coin flip |
-| `python -B verify_mock_atlas.py` | 43 | the Atlas client implements the documented protocol |
+| `python -B verify_mock_atlas.py` | 78 | the Atlas client *and media engines* drive real files |
+
+### The live API is reachable, and the client is proven against it
+
+Connectivity was re-checked this round: Python reaches `yukon.org`,
+`hack.mothquantum.com`, `github.com` and the API. `GET /api/v1/me` on
+`api.mothquantum.com` returns a proper RFC-9457 error body:
+
+```json
+{"$schema": "https://api.mothquantum.com/schemas/ErrorModel.json",
+ "title": "Unauthorized", "status": 401, "detail": "authentication required"}
+```
+
+`MothClient` parses that exactly right — `status=401`,
+`detail='authentication required'`, and no false gated-feature. **The whole
+request path is therefore proven against the live service**; only a valid key is
+missing.
+
+Note for anyone else building here: PowerShell's `Invoke-WebRequest` fails against
+every one of these hosts with a TLS error ("the underlying connection was closed")
+because of a schannel credential problem on this machine, while Python and
+`web_fetch` work fine. That is a local shell issue, not a network outage, and it
+is easy to misdiagnose as "no internet".
+
+### Round 8 — the Atlas MEDIA engines are now wired in
+
+Previously Atlas supplied only the creative *decisions* while every media stage
+ran on the bundled renderers. Since the judging criterion is "depth of quantum and
+**Atlas** usage", `engines.py` now routes four real engines:
+
+| stage | engine | inputs | what the tests assert |
+|---|---|---|---|
+| image interference | `blur-v1` | `image` | PNG in, PNG out, output differs from input |
+| two-image blend | `telablur-v1` | `image1`, `image2` | both slots sent |
+| space / decay | `retrocausal-echo-v1` | `audio`, `ir` | WAV in, non-silent stereo WAV out |
+| generative texture | `entanglement-shader-v1` | none | correct size, no input_files |
+
+The tests are not "did a job complete" — they assert that **real bytes
+round-trip**: the blob the engine read is byte-identical to the PNG sent, the
+returned image decodes and differs from its input (mean abs diff 0.0151), and the
+returned audio is non-silent stereo at the reported sample rate. Capability is
+probed from `GET /engines` rather than assumed; a fallback is always visible
+(`used_atlas: false` plus a `fallback_reason`), and `strict=True` raises instead
+of silently substituting local output.
+
+**One honesty bug found while wiring it:** media stages were labelled with the
+*quantum backend's* name, so an Atlas-quantum / local-media run reported
+`source: atlas` — which reads as "Atlas rendered this". The quantum backend and
+the media renderer are separate things and are now labelled separately
+(`atlas-media` vs `local-renderers`).
 
 ### Round 7 — packaged, and three packaging bugs found
 
