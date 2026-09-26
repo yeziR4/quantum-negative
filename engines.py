@@ -36,6 +36,7 @@ Design rules, all deliberate:
 from __future__ import annotations
 
 import io
+import mimetypes
 import os
 import wave
 
@@ -43,6 +44,21 @@ import numpy as np
 from PIL import Image
 
 __all__ = ["EngineResult", "MediaEngines", "ENGINE_SCHEMAS"]
+
+
+def _zip_members(blob: bytes) -> list[str]:
+    """List the members of a ZIP payload, or [] if it is not a ZIP.
+
+    Exists because `entanglement-shader-v1` returns a ZIP of shader source, and a
+    caller deserves to know what actually arrived rather than getting an opaque
+    decoding error.
+    """
+    import zipfile
+    try:
+        with zipfile.ZipFile(io.BytesIO(blob)) as zf:
+            return zf.namelist()
+    except Exception:                                   # noqa: BLE001
+        return []
 
 
 # The documented input/output contract for each engine we use. Kept here so the
@@ -163,12 +179,23 @@ class MediaEngines:
         return buf.getvalue()
 
     @staticmethod
-    def _decode_png(blob: bytes, size: int | None = None) -> np.ndarray:
-        """PNG bytes -> float array in [0, 1], greyscale."""
+    def _decode_png(blob: bytes, size: int | None = None,
+                    keep_colour: bool = False) -> np.ndarray:
+        """PNG bytes -> float array in [0, 1].
+
+        Defaults to greyscale. `keep_colour=True` preserves an RGB payload,
+        which matters: the live `blur-v1` returns a colour image, and collapsing
+        it to one channel and then broadcasting that back over three channels
+        silently discards the palette the quantum angles chose — which is exactly
+        what made an early live render come out muddy grey.
+        """
         img = Image.open(io.BytesIO(blob))
         if size:
             img = img.resize((size, size), Image.BICUBIC)
-        if img.mode != "L":
+        if keep_colour:
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+        elif img.mode != "L":
             img = img.convert("L")
         return np.asarray(img, dtype=np.float64) / 255.0
 
@@ -207,35 +234,68 @@ class MediaEngines:
 
     def _run(self, engine_id: str, *, params: dict,
              files: dict[str, tuple[str, bytes]] | None = None,
-             mode: str | None = None) -> tuple[list[bytes], list[str], str]:
+             mode: str | None = None,
+             prefer_slot: str | None = None,
+             prefer_type: str | None = None) -> tuple[list[bytes], list[str], str]:
         """Upload inputs, submit, wait, download outputs.
 
         Returns (output blobs, filenames, job_id).
+
+        Slot selection is not a detail. Verified against the live API,
+        `retrocausal-echo-v1` returns THREE outputs — `ir` (JSON), `result`
+        (audio/wav) and `taps` (JSON) — so taking the first one silently yields a
+        JSON impulse response where audio was expected. Callers name the slot or
+        content type they want.
+
+        The declared MIME type matters too: the engine's `input_files` contract
+        lists accepted types, and the API answers
+        `422 input files do not match the engine's requirements` when the asset's
+        saved content type is not among them. Uploading a PNG as
+        `application/octet-stream` then fails exactly this way, so the content
+        type is inferred from the filename rather than left to the default.
         """
         input_ids: dict[str, str] = {}
         for slot, (filename, blob) in (files or {}).items():
-            asset = self.client.upload_bytes(filename, blob)
+            ctype = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+            asset = self.client.upload_bytes(filename, blob, content_type=ctype)
             input_ids[slot] = asset["asset_id"]
 
         job = self.client.submit(engine_id, params=params,
-                                 input_files=input_ids or None, mode=mode,
-                                 )
+                                 input_files=input_ids or None, mode=mode)
         job_id = job["job_id"]
         self.client.wait(job_id, poll=self.poll, timeout=self.timeout,
                          verbose=False)
         result = self.client.result(job_id)
+        outputs = list(result.get("outputs") or [])
+
+        def rank(out: dict) -> int:
+            """Lower sorts first."""
+            slot = str(out.get("slot") or "")
+            ctype = str(out.get("content_type") or "")
+            if prefer_slot and slot == prefer_slot:
+                return 0
+            if prefer_type and ctype.startswith(prefer_type):
+                return 1
+            # Side-channel outputs are never the media itself.
+            if slot in ("ir", "taps", "map", "trajectory"):
+                return 3
+            return 2
+
+        outputs.sort(key=rank)
+
         blobs, names = [], []
-        for out in result.get("outputs") or []:
+        for out in outputs:
             url = out.get("url")
             if not url:
                 continue
             name = out.get("filename") or f"{engine_id}-output"
-            dest = os.path.join("_engine_tmp", f"{job_id[:8]}-{os.path.basename(name)}")
+            dest = os.path.join("_engine_tmp",
+                                f"{job_id[:8]}-{os.path.basename(name)}")
             os.makedirs(os.path.dirname(dest), exist_ok=True)
             self.client.download(url, dest)
             with open(dest, "rb") as fh:
                 blobs.append(fh.read())
-            names.append(os.path.basename(name))
+            names.append(f"{out.get('slot') or '?'}:{os.path.basename(name)}")
             try:
                 os.remove(dest)
             except OSError:
@@ -256,8 +316,17 @@ class MediaEngines:
 
     def blur_image(self, field: np.ndarray, *, strength: float = 0.5,
                    reach: int = 0, size: int | None = None,
-                   style: str = "rx", local=None) -> EngineResult:
+                   style: str = "rx", downscale: bool = False,
+                   local=None) -> EngineResult:
         """Image interference via `blur-v1`; falls back to a local renderer.
+
+        The returned array keeps whichever dimensionality came back: the live
+        engine answers with a colour image, and forcing it to greyscale would
+        discard the palette the quantum angles chose.
+
+        `downscale` defaults to False. The engine's own default is True, which
+        resamples internally and left a visible 4x4 block quantisation in the
+        rendered frames — an artefact of the engine's pipeline, not of ours.
 
         `local` is a zero-argument callable returning the fallback array, so the
         caller decides what the local equivalent is.
@@ -268,20 +337,23 @@ class MediaEngines:
             reason = self.probe().get("_probe_error") or f"{engine} not available"
             return self._fallback(engine, reason, local() if local else field,
                                   "film.quantum_field")
+        colour = np.asarray(field).ndim == 3
         try:
             png = self._encode_png(field)
             params = {"strength": float(strength), "reach": float(reach),
-                      "style": style, "downscale": True}
+                      "style": style, "downscale": bool(downscale)}
             if size:
                 params["size"] = int(size)
             blobs, names, job_id = self._run(
                 engine, params=params,
-                files={"image": ("field.png", png)})
-            out = self._decode_png(blobs[0], size=field.shape[0])
+                files={"image": ("field.png", png)},
+                prefer_type="image/")
+            out = self._decode_png(blobs[0], size=field.shape[0],
+                                   keep_colour=colour)
             return EngineResult(out, engine, True, detail={
                 "job_id": job_id, "params": params,
                 "input_bytes": len(png), "output_bytes": len(blobs[0]),
-                "outputs": names,
+                "outputs": names, "colour": colour,
             })
         except Exception as exc:                        # noqa: BLE001
             return self._fallback(engine, f"{type(exc).__name__}: {exc}",
@@ -303,7 +375,8 @@ class MediaEngines:
                       "downscale": True}
             blobs, names, job_id = self._run(
                 engine, params=params,
-                files={"image1": ("a.png", pa), "image2": ("b.png", pb)})
+                files={"image1": ("a.png", pa), "image2": ("b.png", pb)},
+                prefer_type="image/")
             out = self._decode_png(blobs[0], size=a.shape[0])
             return EngineResult(out, engine, True, detail={
                 "job_id": job_id, "params": params,
@@ -317,7 +390,19 @@ class MediaEngines:
     def shader_texture(self, *, size: int = 256, style: str = "peaked",
                        interplay: float = 1.0, layers: int = 2,
                        local=None) -> EngineResult:
-        """Generative texture via `entanglement-shader-v1` (no input files)."""
+        """`entanglement-shader-v1` — which does NOT return a usable image.
+
+        Verified against the live API: this engine returns a ZIP containing
+        shader source (`.osl`, `.frag`, `.glsl`, `.hlsl`, `.mtlx`) plus EXR/HDR
+        LUTs — computer-graphics authoring material, not a rendered frame. There
+        is no image to blend into the film, and claiming otherwise would be
+        false. The method reports the shader bundle it received and falls back to
+        the local texture, so the pipeline keeps working and the receipt states
+        exactly what came back.
+
+        Kept in the codebase deliberately: it records a real capability boundary
+        of the platform instead of hiding it behind a crash.
+        """
         engine = self.TEXTURE_ENGINE
         if not self.available(engine):
             reason = self.probe().get("_probe_error") or f"{engine} not available"
@@ -328,11 +413,18 @@ class MediaEngines:
             params = {"style": style, "interaction": float(interplay),
                       "layers": int(layers), "resolution": int(size)}
             blobs, names, job_id = self._run(engine, params=params)
-            out = self._decode_png(blobs[0], size=size)
-            return EngineResult(out, engine, True, detail={
-                "job_id": job_id, "params": params,
-                "output_bytes": len(blobs[0]), "outputs": names,
-            })
+            members = _zip_members(blobs[0])
+            detail = {"job_id": job_id, "params": params,
+                      "output_bytes": len(blobs[0]), "outputs": names,
+                      "zip_members": members,
+                      "note": ("engine returns shader source and LUTs, not a "
+                               "rendered texture")}
+            return self._fallback(
+                engine,
+                "engine returns shader source (.osl/.glsl/.hlsl) and EXR/HDR "
+                "LUTs, not a rendered image",
+                local() if local else np.zeros((size, size)),
+                "film.correlation_field", detail=detail)
         except Exception as exc:                        # noqa: BLE001
             return self._fallback(engine, f"{type(exc).__name__}: {exc}",
                                   local() if local else np.zeros((size, size)),
@@ -343,9 +435,18 @@ class MediaEngines:
                        local=None) -> EngineResult:
         """Space and decay via `retrocausal-echo-v1`.
 
-        Note the engine declares a 44.1 kHz output in its default params; the
-        result's own sample rate is read back from the returned WAV rather than
-        assumed, so a mismatch cannot silently pitch-shift the piece.
+        Two things verified against the live API and encoded here:
+
+        * The `ir` input slot requires **application/json** (a previously
+          measured otoc-echo trajectory envelope), not a WAV. Sending a WAV for
+          it is rejected. It is also optional, so the engine measures its own
+          impulse response when none is supplied — which is what we do, and why
+          the local `ir` argument is not uploaded.
+        * The engine returns THREE outputs (`ir`, `result`, `taps`), so the
+          audio must be selected by slot or content type rather than by position.
+
+        The result's own sample rate is read back from the returned WAV instead
+        of assumed, so a rate mismatch cannot silently pitch-shift the piece.
         """
         engine = self.AUDIO_ENGINE
         if not self.available(engine):
@@ -354,19 +455,20 @@ class MediaEngines:
                                   local() if local else audio, "synth.convolve_ir")
         try:
             wav_audio = self._encode_wav(audio, sr)
-            wav_ir = self._encode_wav(ir, sr)
             params = {"decay": float(decay), "mix": float(mix),
                       "emit": "audio", "output_format": "pcm_16", "sr": int(sr)}
             blobs, names, job_id = self._run(
                 engine, params=params,
-                files={"audio": ("audio.wav", wav_audio),
-                       "ir": ("ir.wav", wav_ir)})
+                files={"audio": ("audio.wav", wav_audio)},
+                prefer_slot="result", prefer_type="audio/")
             out, out_sr = self._decode_wav(blobs[0])
             return EngineResult(out, engine, True, detail={
                 "job_id": job_id, "params": params, "input_sr": sr,
                 "output_sr": out_sr,
-                "input_bytes": len(wav_audio) + len(wav_ir),
+                "input_bytes": len(wav_audio),
                 "output_bytes": len(blobs[0]), "outputs": names,
+                "note": "ir measured by the engine; the JSON ir output is a "
+                        "reusable envelope and is not a WAV input",
             })
         except Exception as exc:                        # noqa: BLE001
             return self._fallback(engine, f"{type(exc).__name__}: {exc}",

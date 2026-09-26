@@ -85,15 +85,28 @@ def cmd_run(engine_id: str | None = None) -> int:
         # Cheapest engine that takes no uploaded input — safest first real call.
         candidates = []
         for e in client.engines():
-            if e.get("input_type") in (None, "", "none") and not e.get("input_files"):
-                candidates.append((e.get("credits_per_run") or 0, e["engine_id"]))
+            engine = e["engine_id"]
+            # Skip the platform's own test/demo engines. They cost 0 credits and
+            # are therefore the "cheapest", but they exercise nothing real —
+            # picking one would report a successful smoke test that proves
+            # nothing about the engines the pipeline actually uses.
+            if engine.startswith(("test-", "demo-")):
+                continue
+            # "Needs no uploaded file" is decided by whether any input slot is
+            # REQUIRED, not by `input_type`: verified against the live API,
+            # coin-toss-v1 reports input_type "application/json" with no
+            # input_files at all, so testing input_type alone wrongly skips it.
+            slots = e.get("input_files") or []
+            if any(slot.get("required") for slot in slots):
+                continue
+            candidates.append((e.get("credits_per_run") or 0, engine))
         if not candidates:
-            print("no no-input engine found; pass an engine id explicitly")
+            print("no file-free engine found; pass an engine id explicitly")
             return 1
         candidates.sort()
         engine_id = candidates[0][1]
-        print(f"auto-selected cheapest no-input engine: {engine_id} "
-              f"({candidates[0][0]} credits)")
+        print(f"auto-selected cheapest file-free real engine: {engine_id} "
+              f"({candidates[0][0]} credits)  [test-*/demo-* excluded]")
     else:
         print(f"using engine: {engine_id}")
 

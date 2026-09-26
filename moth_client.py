@@ -298,6 +298,34 @@ class MothClient:
     def result(self, job_id: str) -> dict:
         return self._json("GET", f"/api/v1/jobs/{job_id}/result")
 
+    @staticmethod
+    def outputs_of(result: dict) -> list[dict]:
+        """Downloadable file outputs, or [] for engines that return JSON only.
+
+        Verified against the live API: engines fall into two shapes. File
+        engines (blur-v1, telablur-v1, tessa-image-v1, retrocausal-echo-v1)
+        return `outputs: [...]` with presigned URLs. JSON engines
+        (tamagotchi-v1, coin-toss-v1) return `outputs: null` and put their data
+        in `result.output` instead. Treating the second case as "no result"
+        would silently discard a successful run.
+        """
+        return list(result.get("outputs") or [])
+
+    @staticmethod
+    def inline_output(result: dict) -> dict | None:
+        """The JSON payload for engines that answer in-body, else None.
+
+        The live shape is `{"result": {"output": {...}}}`, but tolerate a bare
+        `{"result": {...}}` too rather than assuming one nesting depth.
+        """
+        raw = result.get("result")
+        if not isinstance(raw, dict):
+            return None
+        inner = raw.get("output")
+        if isinstance(inner, dict):
+            return inner
+        return raw
+
     def jobs(self, **filters) -> dict:
         q = "&".join(f"{k}={v}" for k, v in filters.items() if v is not None)
         return self._json("GET", "/api/v1/jobs" + (f"?{q}" if q else ""))

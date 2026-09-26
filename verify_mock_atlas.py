@@ -33,6 +33,7 @@ import urllib.error
 import urllib.request
 import uuid
 import wave
+import zipfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import numpy as np
@@ -81,7 +82,11 @@ MEDIA_ENGINES: dict[str, dict] = {
     },
     "retrocausal-echo-v1": {
         "name": "Retrocausal Echo", "credits": 6, "output": "audio",
-        "inputs": {"audio": True, "ir": True},
+        # BOTH slots are optional on the real engine, and `ir` accepts
+        # application/json (a measured envelope) rather than a WAV. Marking `ir`
+        # required here previously made the mock reject submissions that the live
+        # API accepts — a mock being stricter than reality hides real behaviour.
+        "inputs": {"audio": False, "ir": False},
         "params_schema": {"decay": {"type": "number", "default": 0.9},
                           "emit": {"type": "string", "enum": ["audio", "map"]},
                           "mix": {"type": "number", "default": 0.6},
@@ -416,9 +421,9 @@ class MockAtlas(BaseHTTPRequestHandler):
             b = b.resize(a.size)
             out = Image.blend(a, b, max(0.0, min(strength, 1.0)))
         elif engine_id == "entanglement-shader-v1":
+            # Real behaviour: a ZIP of shader source, not a rendered image.
             res = int(params.get("resolution") or 128)
-            style = params.get("style", "peaked")
-            out = _synthetic_pattern(res, res, style)
+            return _shader_bundle(res, res), f"{engine_id}.zip", "application/zip"
         else:                                            # blur-v1 and friends
             a = Image.open(io.BytesIO(blobs["image"])).convert("L")
             gain = 1.0 + 4.0 * (strength - 0.5)
@@ -458,7 +463,7 @@ class MockAtlas(BaseHTTPRequestHandler):
 
 
 def _synthetic_pattern(w: int, h: int, style: str = "peaked"):
-    """A deterministic pattern for the shader engine's generative output."""
+    """A deterministic pattern, used only by the legacy shader-v0 stub."""
     from PIL import Image
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float64)
     xx /= max(w - 1, 1)
@@ -468,6 +473,24 @@ def _synthetic_pattern(w: int, h: int, style: str = "peaked"):
              np.cos(2 * np.pi * (xx - seed * yy))) / 2.0
     data = ((field + 1.0) / 2.0 * 255).astype(np.uint8)
     return Image.fromarray(data, mode="L")
+
+
+def _shader_bundle(w: int, h: int) -> bytes:
+    """Mimic the real entanglement-shader-v1 payload: a ZIP of shader source.
+
+    The live engine returns `.osl`/`.frag`/`.glsl`/`.hlsl`/`.mtlx` source files
+    plus EXR/HDR LUTs — graphics-authoring material, not a rendered image. The
+    mock reproduces that shape so the client's honest-fallback path is actually
+    exercised rather than being tested against an invented PNG.
+    """
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("entanglement_texture.osl", "// osl shader source\n")
+        zf.writestr("entanglement_texture.glsl", "// glsl shader source\n")
+        zf.writestr("entanglement_texture.frag", "// frag shader source\n")
+        zf.writestr("R_lut.exr", b"EXR\x00" + b"\x00" * 64)
+        zf.writestr("T_lut.hdr", b"#?RADIANCE\n" + b"\x00" * 64)
+    return buf.getvalue()
 
 
 def _require_png_or_wav(filename: str, blob: bytes) -> None:
@@ -762,15 +785,29 @@ def main() -> int:
                          if c["engine_id"] == "telablur-v1"), {})
                    .get("body", {}).get("input_files") or {})) == 2)
 
-        # --- entanglement-shader-v1: no input files at all.
-        res3 = media.shader_texture(size=64, style="peaked")
-        check("entanglement-shader-v1 ran on Atlas", res3.used, res3.reason or "ok")
-        check("shader returned a texture of the requested size",
+        # --- entanglement-shader-v1 returns SHADER SOURCE, not an image.
+        # Verified against the live API: the engine answers with a ZIP holding
+        # .osl/.glsl/.hlsl/.mtlx and EXR/HDR LUTs, so there is no texture to
+        # blend. The correct behaviour is a *visible* fallback that reports the
+        # bundle it received — never a silent substitution, and never a crash.
+        shader_media = media_mod.MediaEngines(client, strict=False, poll=0.2,
+                                              timeout=20)
+        res3 = shader_media.shader_texture(size=64, style="peaked")
+        check("shader does not claim to have produced an image", not res3.used)
+        check("shader reports why it fell back",
+              "shader source" in res3.reason, res3.reason[:70])
+        check("shader lists the zip members it received",
+              isinstance(res3.detail.get("zip_members"), list)
+              and len(res3.detail["zip_members"]) >= 1,
+              str(res3.detail.get("zip_members"))[:80])
+        check("shader fallback still yields a usable texture",
               res3.value.shape == (64, 64), str(res3.value.shape))
         shader_call = next((c for c in ENGINE_PROCESS_CALLS
                             if c["engine_id"] == "entanglement-shader-v1"), None)
         check("shader was submitted with no input_files",
               bool(shader_call) and not shader_call["body"].get("input_files"))
+        check("the shader client is not strict, so it degrades instead of raising",
+              shader_media.strict is False)
 
         # --- retrocausal-echo-v1: real WAV in, real WAV out.
         audio = synth_buf = np.zeros((2, 2205))
@@ -789,10 +826,10 @@ def main() -> int:
         check("audio output is not silent",
               float(np.abs(res4.value).max()) > 0.01,
               f"peak {float(np.abs(res4.value).max()):.4f}")
-        check("echo received both audio and ir slots",
-              len((next((c for c in ENGINE_PROCESS_CALLS
+        check("echo received only the audio slot (ir is measured, not uploaded)",
+              set((next((c for c in ENGINE_PROCESS_CALLS
                          if c["engine_id"] == "retrocausal-echo-v1"), {})
-                   .get("body", {}).get("input_files") or {})) == 2)
+                   .get("body", {}).get("input_files") or {})) == {"audio"})
 
         print("\n[13] fallback is visible, never silent")
         class _Exhausted(media_mod.MediaEngines):

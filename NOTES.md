@@ -4,10 +4,84 @@ Context and plan for our Moth Hack submission. Source of truth for the API is
 `../moth-api.json` (OpenAPI 3.1, `moth-api` v0.41.0); a human-readable dump of
 every endpoint is in `api-notes.txt`.
 
-## STATUS — verified as of round 8
+## STATUS — verified as of round 9, **against the live API**
 
-**All three entry deliverables exist, are packaged, are verified, and now run the
-real Atlas media engines.** Six suites, **266 checks, all passing**.
+**The key works and the pipeline runs on real Atlas engines.** Account:
+`yezirhasan@gmail.com`, role `player`. Six suites, **269 checks, all passing**.
+
+| suite | checks | what it proves |
+|---|---|---|
+| `python -B test_qsim.py` | 44 | the simulator is physically correct |
+| `python -B verify_pipeline.py --size 256` | 44 | the pipeline makes real, reproducible media |
+| `python -B verify_notebook.py` | 24 | the notebook is valid, executed, evidence embedded |
+| `python -B verify_webapp.py` | 52 | the app and the game work over real HTTP |
+| `python -B verify_game.py` | 24 | the game is quantum and skill-based, not a coin flip |
+| `python -B verify_mock_atlas.py` | 81 | the Atlas client and media engines drive real files |
+
+### Live account facts (verified, not assumed)
+
+- **`features: []`** — the account carries **no `run_quantum`**, so `mode="qpu"`
+  (real quantum hardware) is **not available**. `AtlasBackend` raises
+  `FeatureMissing` rather than silently emulating while claiming hardware. Every
+  claim in the submission therefore stays on emulated/simulated execution, which
+  is what it already says.
+- **31 engines visible**, including six `test-*`/`demo-*` engines at **0 credits**.
+  This mattered: the smoke test auto-selected the "cheapest no-input engine" and
+  would have run a *test* engine, reporting success while proving nothing. It now
+  skips `test-*`/`demo-*`, and selects on whether an input slot is *required*
+  rather than on `input_type`.
+- **Storage quota** 1 GiB upload / 10 GiB total; a full live render uses a few MB.
+
+### The live API differs from the spec in ways that mattered
+
+Testing against the real service found **six bugs no mock would have caught**,
+because in each case my mock encoded my own wrong assumption:
+
+1. **`entanglement-shader-v1` does not output an image.** It returns a ZIP of
+   shader source (`.osl`, `.frag`, `.glsl`, `.hlsl`, `.mtlx`) plus EXR/HDR LUTs —
+   graphics-authoring material, not a rendered frame. Every call would have
+   crashed in `_decode_png`. Now handled honestly: the client reports the bundle
+   it received and falls back to the local texture, and the mock was corrected to
+   serve a real ZIP so the path is actually exercised.
+2. **`retrocausal-echo-v1` returns THREE outputs** — `ir` (JSON), `result`
+   (audio/wav) and `taps` (JSON). Taking `outputs[0]` yields a JSON impulse
+   response where audio was expected. Selection is now by slot/content type.
+3. **Its `ir` input requires `application/json`**, not a WAV. Uploading a WAV was
+   rejected; the engine measures its own IR when none is supplied.
+4. **The declared MIME type on the asset decides acceptance.** `blur-v1` requires
+   `image/png`; uploading a PNG as `application/octet-stream` gives
+   `422 input files do not match the engine's requirements`. Content type is now
+   inferred from the filename.
+5. **Engine schemas differ and unknown params are rejected.** `tamagotchi-v1`
+   has no `mode`, so sending one gave `422 params do not match the engine
+   schema`. Parameters are filtered against each engine's own `params_schema`.
+6. **JSON engines nest their payload at `result.result.output`**, with
+   `outputs: null`. Handling only `counts` silently discarded successful runs.
+
+### Live results
+
+Three Atlas engines genuinely produce layers of the delivered film:
+
+| layer | engine | status |
+|---|---|---|
+| image interference | `blur-v1` | **live** — used as a 25% haze layer |
+| image morph | `telablur-v1` | **live** |
+| space and decay | `retrocausal-echo-v1` | **live** — audio |
+| generative texture | `entanglement-shader-v1` | unavailable by design (bug 1) |
+
+The image engines are mixed in at **low weight, deliberately**. Measured: their
+output carries a mean horizontal gradient of ~6e-4, i.e. it is essentially
+defocussed, with far less detail than the field it was given. Using it as the
+primary structure flattened the frame to mud; using it as a texture layer over
+the correlation field keeps the picture readable while still materially changing
+the rendered pixels. Both facts are recorded in the code and in the receipt
+(`applied_as`).
+
+**One honesty bug found while wiring this:** media stages were labelled with the
+quantum backend's name, so an Atlas-quantum/local-media run reported
+`source: atlas`. Backend and renderer are now labelled separately
+(`atlas-media` vs `local-renderers`), and a layer claims `atlas-media` only when
+an engine actually ran.
 
 | suite | checks | what it proves |
 |---|---|---|

@@ -271,15 +271,43 @@ class AtlasBackend:
         self.engine_id = engine_id
         self.mode = mode
         self.shots = shots
+        self._declared: set[str] | None = None
+        self.last_params: dict = {}
+        self.last_mode: str | None = None
+
+    def _declared_params(self) -> set[str]:
+        """The parameter names this engine's own schema accepts.
+
+        Engine schemas differ substantially and the API rejects unknown params
+        with `422 params do not match the engine schema`. Verified live:
+        `tamagotchi-v1` declares {actions, code, expected, method, n_logical,
+        noise, seed, shots} and has no `mode`, so sending one fails. Params are
+        therefore filtered against the engine's schema instead of assumed.
+        """
+        if self._declared is None:
+            try:
+                schema = self.client.params_schema(self.engine_id) or {}
+            except Exception:                           # noqa: BLE001
+                schema = {}
+            props = schema.get("props") or schema.get("properties") or {}
+            self._declared = set(props)
+        return self._declared
 
     def primitives(self, seed: int) -> tuple[CreativePrimitives, list[Provenance]]:
         prim = CreativePrimitives()
         prim.seed = seed
         prim.shots = self.shots
+
+        declared = self._declared_params()
+        wanted = {"shots": self.shots, "seed": seed}
+        # Only send what the engine's schema declares; `mode` is used as the
+        # request-level argument instead, and only where it is meaningful.
+        params = {k: v for k, v in wanted.items() if not declared or k in declared}
+        mode = self.mode if (not declared or "mode" in declared) else None
+        self.last_params = params
+        self.last_mode = mode
         try:
-            res = self.client.submit(self.engine_id,
-                                     params={"shots": self.shots, "seed": seed},
-                                     mode=self.mode)
+            res = self.client.submit(self.engine_id, params=params, mode=mode)
         except Exception as exc:                       # MothError and friends
             feature = getattr(exc, "gated_feature", None)
             if feature:
@@ -292,15 +320,34 @@ class AtlasBackend:
         self.client.wait(job_id, verbose=False)
         result = self.client.result(job_id)
 
-        # Engine outputs vary; accept either raw counts or an output asset.
+        # Engine results come in two shapes, verified against the live API:
+        # file engines return `outputs: [...]`, JSON engines return
+        # `outputs: null` with the payload nested at `result.output`. Handling
+        # only the first would silently discard a successful run.
         detail = {"job_id": job_id, "mode": self.mode, "engine": self.engine_id,
                   "shots": self.shots}
+        inline = None
+        if hasattr(self.client, "inline_output"):
+            inline = self.client.inline_output(result)
+        else:                                           # duck-typed test clients
+            raw = result.get("result")
+            inline = raw.get("output") if isinstance(raw, dict) else None
+
         counts = None
-        raw = result.get("result")
-        if isinstance(raw, dict):
-            counts = raw.get("counts") or raw.get("counts_dict")
-            detail["engine_keys"] = sorted(raw.keys())[:20]
+        if isinstance(inline, dict):
+            counts = inline.get("counts") or inline.get("counts_dict")
+            detail["result_keys"] = sorted(inline.keys())[:24]
+
+        # A JSON engine with no bitstring counts (tamagotchi-v1 reports QEC
+        # statistics, not measurement strings) still ran. Record that honestly
+        # and derive the primitives from the seed, rather than pretending the
+        # statistics were measurements.
         prim.bits = _decode_counts(counts) if counts else [seed % 256]
+        if counts:
+            detail["outcome_source"] = "engine counts"
+        else:
+            detail["outcome_source"] = (
+                "seed-derived: this engine returned no bitstring counts")
         prim.n_qubits = max(4, len(max((format(b, "b") for b in prim.bits), key=len,
                                        default="0000")))
 
@@ -511,7 +558,7 @@ class Pipeline:
                   "lead_notes": len(lead), "pad_notes": len(pad),
                   "spacing_seconds": spacing}
         prov = [Provenance(choice="instrumentation-and-melody",
-                           source=self._media_source(),
+                           source="local-renderers",
                            engine="synth.render_fm/render_additive",
                            detail=detail)]
 
@@ -560,39 +607,97 @@ class Pipeline:
         """
         size = self.size
         field = film.quantum_field(prim.probabilities, size=size, blur=1.0)
+        palette = film.palette_from_angles(prim.angles)
 
         media_prov: list[Provenance] = []
+        blur_used_atlas = False
+        morph_field = None
         if self.media is not None:
-            # Route the interference layer through Atlas' blur-v1, then the
-            # two-image blend through telablur-v1. Both fall back to the local
-            # renderers if the engines are not reachable, and either way the
-            # receipt records which path produced the layer.
+            # Route the interference layer through Atlas' blur-v1, on the
+            # GREYSCALE field and BEFORE tinting. Two ordering choices matter, and
+            # both were learned the hard way:
+            #   * blurring the tinted RGB composite washes the palette out,
+            #     because the engine blurs channels — the frame goes muddy grey;
+            #   * *replacing* the field with the engine's output flattens the
+            #     image, because that output carries far less structure than the
+            #     probability/correlation field.
+            # So the engine's result is used as a MODULATION of the field rather
+            # than a substitute: the engine genuinely shapes the layer, and the
+            # structure that makes it read as a picture survives.
             blurred = self.media.blur_image(
                 field, strength=prim.blur_strength, reach=prim.blur_reach,
-                style="rx", size=size,
+                style="rx", size=size, downscale=False,
                 local=lambda: field)
-            field = blurred.value
+            blur_used_atlas = blurred.used
+            if blurred.used:
+                got = np.asarray(blurred.value, dtype=np.float64)
+                if got.ndim == 3:
+                    got = got.mean(axis=2)
+                lo, hi = float(got.min()), float(got.max())
+                morph_field = (got - lo) / ((hi - lo) or 1.0)
+                # Measured: the engine's output has a mean horizontal gradient of
+                # ~6e-4, i.e. it is essentially defocussed and carries far less
+                # detail than the field it was given. So it is treated as a
+                # HAZE/texture layer mixed in at low weight, not as the primary
+                # structure. It still materially changes the rendered pixels —
+                # the test suite asserts the difference — but it cannot flatten
+                # the picture, because the correlation field remains dominant.
+                field = np.clip(0.75 * field + 0.25 * morph_field, 0.0, 1.0)
             media_prov.append(Provenance(
                 choice="image-interference",
                 source="atlas-media" if blurred.used else "local-renderers",
                 engine=blurred.engine,
                 detail={**blurred.detail, "used_atlas": blurred.used,
-                        "fallback_reason": blurred.reason}))
+                        "fallback_reason": blurred.reason,
+                        "applied_as": "haze layer, 25% weight" if blurred.used
+                        else "fallback"}))
 
-        smooth = film.smooth(field, radius=9.0)
+        # Smoothed less when Atlas has already contributed haze: the engine's
+        # output is defocussed, and a wide blur on top of it leaves the frame
+        # flat. Detail is recovered by lightening the smoothing and leaning on
+        # the correlation field, which carries the structure.
+        smooth = film.smooth(field, radius=5.0 if blur_used_atlas else 9.0)
         corr = film.correlation_field(
             getattr(prim, "pair_mutual_information_bits", []) or [0.0],
             prim.qubit_marginals, size=size, seed=prim.seed,
             probability_map=smooth)
         stripes = film.readout_texture(prim.qubit_marginals, size=size)
-        palette = film.palette_from_angles(prim.angles)
 
-        body = np.clip(0.55 * corr + 0.35 * smooth + 0.10 * stripes, 0.0, 1.0)
+        body = np.clip(0.66 * corr + 0.24 * smooth + 0.10 * stripes, 0.0, 1.0)
+
+        blend_used_atlas = False
+        if self.media is not None and morph_field is not None:
+            # Second Atlas stage: telablur-v1 morphs the engine's own blurred
+            # field toward the local correlation field. Both operands are
+            # structural (greyscale, pre-tint) and the result is mixed in at
+            # partial weight, so the morph alters the image without erasing the
+            # detail that makes it read as a picture.
+            morphed = self.media.blend_images(
+                morph_field, corr, strength=prim.entangle_strength,
+                direction="full",
+                local=lambda: film.entangle_frames(morph_field, corr,
+                                                   prim.entangle_strength))
+            blend_used_atlas = morphed.used
+            if morphed.used:
+                got = np.asarray(morphed.value, dtype=np.float64)
+                if got.ndim == 3:
+                    got = got.mean(axis=2)
+                # Mixed at low weight for the same reason as the blur layer:
+                # telablur's output is largely featureless, so it contributes
+                # texture rather than structure. The tests assert that the body
+                # differs from its un-morphed value, so the engine's effect is
+                # real and verified rather than decorative.
+                body = np.clip(0.78 * body + 0.22 * got, 0.0, 1.0)
+            media_prov.append(Provenance(
+                choice="image-morph",
+                source="atlas-media" if morphed.used else "local-renderers",
+                engine=morphed.engine,
+                detail={**morphed.detail, "used_atlas": morphed.used,
+                        "fallback_reason": morphed.reason}))
+
         base_a = film.tint(film.vignette(body, strength=0.45), palette)
-        # The companion layer inverts the weighting so the blend has contrast.
-        companion = np.clip(0.55 * (1.0 - corr) + 0.35 * stripes + 0.10 * smooth,
-                            0.0, 1.0)
-        base_b = film.tint(film.vignette(companion, strength=0.30), palette[::-1])
+        base_b = film.tint(film.vignette(np.clip(1.0 - body, 0.0, 1.0),
+                                         strength=0.30), palette[::-1])
 
         frames = []
         for scene, hold in enumerate(prim.scene_pacing):
@@ -616,14 +721,15 @@ class Pipeline:
 
         prov = media_prov + [Provenance(
             choice="visual-structure-and-palette",
-            source=self._media_source(),
+            source=("atlas-media" if blend_used_atlas else "local-renderers"),
             engine=("film.quantum_field / readout_texture / entangle_frames"
-                    + (" / telablur-v1" if self.media is not None else "")),
+                    + (" / telablur-v1" if blend_used_atlas else "")),
             detail={"scenes": prim.scene_count,
                     "scene_pacing": prim.scene_pacing,
                     "blur_strength": prim.blur_strength,
                     "blur_reach": prim.blur_reach,
                     "entangle_strength": prim.entangle_strength,
+                    "blend_used_atlas": blend_used_atlas,
                     "palette_rgb": [round(float(v), 4) for v in palette]})]
         return frames, prov
 

@@ -33,6 +33,7 @@ _verify_c/
 _mock_output.json
 _mock_upload.bin
 webapp-test.log
+_live_*.bin
 
 # ---- distribution artifacts ---------------------------------------------
 # Built by make_bundle.py; regenerate rather than commit.
