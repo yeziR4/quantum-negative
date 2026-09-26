@@ -83,6 +83,35 @@ To run the Atlas API sections against the real service, provide a key (see below
 
 ---
 
+## Packaging a submission bundle
+
+```bash
+python make_bundle.py                 # dist/quantum-negative-<date>.zip + manifest
+python make_bundle.py --verify-only   # re-check an existing bundle
+```
+
+The bundle is self-describing: it carries a `MANIFEST.json` listing every file
+with its SHA-256 and size, so a recipient can confirm the archive survived
+transfer. It **refuses to build** if a file matching a secret name would be
+included, and it fails if the archive exceeds a size budget.
+
+Those two guards exist because packaging bugs here are silent, and both kinds
+already happened: `.gitignore` first excluded the demo media — the actual
+deliverables — via broad `*.png`/`*.mp4`/`*.wav` globs, and then the notebook's
+scratch `notebook_output_repeat/` directory doubled the archive size. The bundler
+now defaults to **deny** at the top level, walking only explicitly listed
+directories.
+
+Verify a bundle from a clean extraction rather than trusting the build step:
+
+```bash
+unzip -q dist/quantum-negative-<date>.zip -d /tmp/check
+cd /tmp/check/quantum-negative
+python verify_pipeline.py && python verify_notebook.py && python verify_mock_atlas.py
+```
+
+---
+
 ## Quantum backend
 
 Two backends implement the same interface, so the composition logic is written once:

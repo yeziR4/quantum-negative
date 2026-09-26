@@ -4,10 +4,11 @@ Context and plan for our Moth Hack submission. Source of truth for the API is
 `../moth-api.json` (OpenAPI 3.1, `moth-api` v0.41.0); a human-readable dump of
 every endpoint is in `api-notes.txt`.
 
-## STATUS — verified as of round 6
+## STATUS — verified as of round 7
 
-**All three entry deliverables exist and are verified.** Six suites,
-**231 checks, all passing**:
+**All three entry deliverables exist, are packaged, and are verified.**
+Six suites, **231 checks, all passing** — and the same 231 pass when run from a
+clean extraction of the submission bundle.
 
 | suite | checks | what it proves |
 |---|---|---|
@@ -18,7 +19,34 @@ every endpoint is in `api-notes.txt`.
 | `python -B verify_game.py` | 24 | the game is quantum and skill-based, not a coin flip |
 | `python -B verify_mock_atlas.py` | 43 | the Atlas client implements the documented protocol |
 
-### Two bugs found this round by testing the Atlas path against a mock API
+### Round 7 — packaged, and three packaging bugs found
+
+The project is now a git repo (3 commits, no secrets, `.gitattributes` pinning
+line endings) plus a self-describing bundle from `make_bundle.py`. Packaging
+turned out to be its own source of silent failures:
+
+1. **`.gitignore` excluded the deliverables.** Broad `*.png`/`*.mp4`/`*.wav`
+   globs dropped the demo film, score and poster — the actual submission
+   artifacts. Attempting to recover them with `!demo/*.png` negation rules does
+   not work: git will not re-include a file once a broader pattern excludes it,
+   and `git check-ignore -v` misleadingly reports the *negation itself* as the
+   matching rule, which looks like success. Scratch is now ignored by directory.
+2. **The bundle shipped scratch output.** `notebook_output_repeat/` — written by
+   the notebook's reproducibility comparison — was committed and included,
+   inflating the archive from ~2.1 MB to ~3.6 MB. Removed, and `make_bundle.py`
+   now defaults to **deny**: only directories explicitly listed in `SHIP_DIRS`
+   are walked, so scratch written by a future script cannot leak in merely
+   because nobody remembered to ignore it. A size budget fails the build as a
+   second guard.
+3. **A reviewer could not verify the notebook from a fresh copy.**
+   `verify_notebook.py` failed on a clean extraction because `notebook_output/`
+   is generated, not shipped. It now regenerates it automatically when absent,
+   so verification works from a cold checkout with no undocumented prerequisite.
+
+The bundle was then verified properly — not by trusting the build, but by
+extracting it elsewhere and running all six suites there: **231/231 pass**.
+
+### Round 6 — two bugs found by testing the Atlas path against a mock API
 
 `moth_client.py` and `AtlasBackend` had never executed a single HTTP round trip,
 because no API key ever arrived. That was the largest unverified surface in the

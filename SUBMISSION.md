@@ -37,8 +37,15 @@ A prompt becomes a short film whose melody, instrumentation, colour and structur
 Notebook : QUANTUM_NEGATIVE.ipynb           (repo or drive link) [FILL IN]
 Web app  : [FILL IN if hosted, otherwise "run locally: python webapp.py"]
 Repo     : [FILL IN if public]
+Bundle   : dist/quantum-negative-<date>.zip   (self-verifying, ~2.1 MB)
 Demo     : demo/quantum_negative.mp4, demo/quantum_negative.wav, demo/poster.png
 ```
+
+The repository is a git repo with three commits and is ready to push. A standalone
+bundle is also built by `make_bundle.py`: it is self-describing (a `MANIFEST.json`
+with a SHA-256 per file), contains no credentials, and I verified it by extracting
+it to a clean directory and running all six suites there — **231/231 pass from the
+extraction**, so it needs no setup beyond Python, numpy, Pillow and ffmpeg.
 
 ---
 
