@@ -32,7 +32,7 @@ EXCLUDE_DIRS = {"__pycache__", ".git", "dist", "web_output", "notebook_output",
                 "notebook_output_repeat", "smoke_outputs",
                 "_verify_a", "_verify_b", "_verify_c",
                 ".venv", "venv"}
-EXCLUDE_SUFFIXES = (".pyc", ".pyo")
+EXCLUDE_SUFFIXES = (".pyc", ".pyo", ".log")
 
 # Default-deny at the top level: only these directories ship. A scratch
 # directory created by some future script therefore cannot leak into the bundle
