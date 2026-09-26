@@ -1,0 +1,30 @@
+# Never commit secrets. Scratch output is ignored by DIRECTORY, not by extension.
+#
+# An earlier version ignored *.png/*.mp4/*.wav globally, which silently excluded
+# the demo film, score and poster — the actual deliverables. Clawing them back
+# with `!demo/*.png` style negations does not work reliably: git will not
+# re-include a file once a broader pattern excludes it, and `git check-ignore -v`
+# confusingly reports the negation itself as the matching rule. Ignoring the
+# scratch directories instead is simpler and correct.
+
+# ---- secrets -------------------------------------------------------------
+# The API key lives here (first line = key).
+.moth_api_key
+
+# ---- python --------------------------------------------------------------
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ---- scratch output from runs -------------------------------------------
+smoke_outputs/
+outputs/
+web_output/
+notebook_output/
+_verify_a/
+_verify_b/
+_verify_c/
+_mock_output.json
+_mock_upload.bin
+webapp-test.log

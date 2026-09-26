@@ -1,0 +1,9 @@
+# Keep line endings stable so the verification logs and sources diff cleanly
+# across the Windows machine this was built on and any Linux reviewer cloning it.
+* text=auto eol=lf
+
+# Binary deliverables must never be line-ending converted.
+*.png binary
+*.mp4 binary
+*.wav binary
+*.ipynb text eol=lf

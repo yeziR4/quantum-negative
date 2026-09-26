@@ -1,0 +1,427 @@
+{
+  "artifact_sha256": {
+    "audio": "e7998fcebbd18f20612312a0a5975ae47caef05bbe1f492ed358f4600055710b",
+    "poster": "ed8d8a36f7de19410df5c974d0382e2f880e370c20700202b82ef32ec123403a",
+    "video": "30867eb95a979cb12179b2be90fa6b3bd14c1997d46dda003e6460d331830455"
+  },
+  "artifacts": {
+    "audio": "quantum_negative.wav",
+    "poster": "poster.png",
+    "video": "quantum_negative.mp4"
+  },
+  "audio": {
+    "notes": [
+      {
+        "duration": 0.24,
+        "pan": -0.6,
+        "pitch": 69,
+        "start": 0.15,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.52,
+        "pitch": 72,
+        "start": 0.43,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.44,
+        "pitch": 69,
+        "start": 0.71,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.36,
+        "pitch": 66,
+        "start": 0.99,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.28,
+        "pitch": 50,
+        "start": 1.27,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.2,
+        "pitch": 56,
+        "start": 1.55,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.12,
+        "pitch": 53,
+        "start": 1.83,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.04,
+        "pitch": 65,
+        "start": 2.11,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.04,
+        "pitch": 59,
+        "start": 2.39,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.12,
+        "pitch": 55,
+        "start": 2.67,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.2,
+        "pitch": 63,
+        "start": 2.95,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.28,
+        "pitch": 62,
+        "start": 3.23,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.36,
+        "pitch": 53,
+        "start": 3.51,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.44,
+        "pitch": 58,
+        "start": 3.79,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.52,
+        "pitch": 52,
+        "start": 4.07,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.6,
+        "pitch": 55,
+        "start": 4.35,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.25,
+        "pitch": 57,
+        "start": 0.05,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.2167,
+        "pitch": 60,
+        "start": 0.61,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.1833,
+        "pitch": 57,
+        "start": 1.17,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.15,
+        "pitch": 54,
+        "start": 1.73,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.1167,
+        "pitch": 38,
+        "start": 2.29,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.0833,
+        "pitch": 44,
+        "start": 2.85,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.05,
+        "pitch": 41,
+        "start": 3.41,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.0167,
+        "pitch": 53,
+        "start": 3.97,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.0167,
+        "pitch": 47,
+        "start": 4.53,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.05,
+        "pitch": 43,
+        "start": 5.09,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.0833,
+        "pitch": 51,
+        "start": 5.65,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.1167,
+        "pitch": 50,
+        "start": 6.21,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.15,
+        "pitch": 41,
+        "start": 6.77,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.1833,
+        "pitch": 46,
+        "start": 7.33,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.2167,
+        "pitch": 40,
+        "start": 7.89,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.25,
+        "pitch": 43,
+        "start": 8.45,
+        "velocity": 0.3
+      }
+    ],
+    "rms": 0.111453,
+    "sample_rate": 22050,
+    "spectral_centroid_hz": 810.55
+  },
+  "backend": "local-emulator",
+  "creative_primitives": {
+    "angles": [
+      2.277619,
+      2.771267,
+      -0.835514,
+      -1.044245,
+      0.012912,
+      0.490635,
+      -0.270472,
+      1.393801,
+      -3.040751
+    ],
+    "bits": [
+      496,
+      499,
+      371,
+      368,
+      352,
+      483,
+      480,
+      467,
+      336,
+      307,
+      240,
+      464,
+      355,
+      435,
+      504,
+      507,
+      112,
+      115,
+      339,
+      451,
+      320,
+      379,
+      376,
+      448,
+      488,
+      360,
+      304,
+      432,
+      344,
+      208,
+      491,
+      224
+    ],
+    "blur_reach": 1,
+    "blur_strength": 0.25,
+    "distribution_l1_vs_uniform": 1.24406714564117,
+    "entangle_strength": 0.25,
+    "entropy_bits": 7.286144824156068,
+    "fm_index": 4.5,
+    "gates": 40,
+    "max_outcome_probability": 0.029922567210712472,
+    "max_pair_mutual_information_bits": 0.6807858061524878,
+    "mutual_information_bits": 0.09020871054299553,
+    "n_qubits": 9,
+    "pair_mutual_information_bits": [
+      0.68078581,
+      0.0,
+      0.0365071,
+      1.463e-05,
+      0.00366181,
+      0.00058779,
+      0.00011255,
+      0.0
+    ],
+    "pitches": [
+      69,
+      72,
+      69,
+      66,
+      50,
+      56,
+      53,
+      65,
+      59,
+      55,
+      63,
+      62,
+      53,
+      58,
+      52,
+      55
+    ],
+    "qubit_marginals": [
+      0.500002,
+      0.500002,
+      0.145505,
+      0.286218,
+      0.61836,
+      0.633016,
+      0.743833,
+      0.528409,
+      0.690107
+    ],
+    "scene_count": 5,
+    "scene_pacing": [
+      10,
+      9,
+      10,
+      9,
+      8
+    ],
+    "seed": 7808021261148314384,
+    "shots": 4096,
+    "spectral_entropy_normalised": 0.809571647128452,
+    "timbre": "all",
+    "use_reverb": true
+  },
+  "prompt": "the last negative of a dying star, developed in the dark",
+  "provenance": [
+    {
+      "choice": "entire-piece-creative-budget",
+      "detail": {
+        "distinct_outcomes": 323,
+        "entropy_bits": 7.286145,
+        "max_entropy_bits": 9.0,
+        "mutual_information_bits": 0.090209,
+        "norm_error": 1.1102230246251565e-15,
+        "shots": 4096
+      },
+      "engine": "qsim.QuantumRegister(9q, 40 gates, 4096 shots)",
+      "source": "local-emulator"
+    },
+    {
+      "choice": "instrumentation-and-melody",
+      "detail": {
+        "fm_index": 4.5,
+        "lead_notes": 16,
+        "pad_notes": 16,
+        "spacing_seconds": 0.28,
+        "timbre": "all"
+      },
+      "engine": "synth.render_fm/render_additive",
+      "source": "local-emulator"
+    },
+    {
+      "choice": "space-and-decay",
+      "detail": {
+        "ir_seconds": 1.6,
+        "quantum_decision": "use_reverb=True",
+        "wet": 0.32
+      },
+      "engine": "synth.convolve_ir",
+      "source": "local-emulator"
+    },
+    {
+      "choice": "visual-structure-and-palette",
+      "detail": {
+        "blur_reach": 1,
+        "blur_strength": 0.25,
+        "entangle_strength": 0.25,
+        "palette_rgb": [
+          0.8802,
+          0.681,
+          0.1292
+        ],
+        "scene_pacing": [
+          10,
+          9,
+          10,
+          9,
+          8
+        ],
+        "scenes": 5
+      },
+      "engine": "film.quantum_field / readout_texture / entangle_frames",
+      "source": "local-emulator"
+    }
+  ],
+  "reproducibility": {
+    "note": "Same prompt and seed reproduce identical bytes.",
+    "seed_derivation": "sha256(prompt) first 8 bytes as a big-endian int"
+  },
+  "seed": 7808021261148314384,
+  "version": "quantum-negative/0.1",
+  "video": {
+    "duration_seconds": 7.667,
+    "fps": 12,
+    "frames": 92,
+    "size": 512
+  }
+}
