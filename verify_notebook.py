@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 
 import nbformat
@@ -47,10 +48,39 @@ def check(name: str, ok: bool, detail: str = "") -> None:
         print(f"  FAIL  {name}" + (f"  ({detail})" if detail else ""))
 
 
+def ensure_outputs() -> bool:
+    """Make sure the notebook's own artifacts exist before checking them.
+
+    A reviewer extracting the submission bundle gets the notebook but not
+    `notebook_output/` (it is generated scratch, deliberately not shipped). Since
+    the notebook is already executed with outputs embedded, the sensible thing is
+    to check it as delivered — and only run it if its artifacts are genuinely
+    absent, so the check is still meaningful on a fresh machine rather than being
+    skipped or failing for a reason that has nothing to do with the submission.
+    """
+    marker = os.path.join("notebook_output", "receipt.json")
+    if os.path.exists(marker):
+        return True
+    print("\n[0] notebook_output/ is absent — executing the notebook to produce it")
+    print("    (the delivered notebook already carries outputs; this only")
+    print("     regenerates the artifacts it writes to disk)")
+    result = subprocess.run([sys.executable, "-B", "build_notebook.py", "--execute"],
+                            capture_output=True, text=True)
+    ok = result.returncode == 0 and os.path.exists(marker)
+    if not ok:
+        tail = (result.stdout or "")[-400:] + (result.stderr or "")[-400:]
+        print(f"    notebook execution failed:\n{tail}")
+    return ok
+
+
 def main() -> int:
     print("=" * 66)
     print("notebook verification")
     print("=" * 66)
+
+    if not ensure_outputs():
+        print("\ncannot verify the notebook's written artifacts")
+        return 1
 
     print("\n[1] structure")
     check("notebook file exists", os.path.exists(NB))
