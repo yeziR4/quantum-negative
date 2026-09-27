@@ -1,0 +1,457 @@
+{
+  "artifact_sha256": {
+    "audio": "9305c18caafebf38a353b4ff23ca4a3ecf19e1a589b95a0f76997585554980c0",
+    "poster": "32701b33e76b77eaddcc3bcd0910894d2ee86901b6a33ffe9258e755e539ddc6",
+    "video": "9a47fe20fa4c99df06d0b60d62459310845c10d9b9da542a906477f7b48c2a58"
+  },
+  "artifacts": {
+    "audio": "quantum_negative.wav",
+    "poster": "poster.png",
+    "video": "quantum_negative.mp4"
+  },
+  "audio": {
+    "notes": [
+      {
+        "duration": 0.24,
+        "pan": -0.6,
+        "pitch": 61,
+        "start": 0.15,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.52,
+        "pitch": 59,
+        "start": 0.43,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.44,
+        "pitch": 51,
+        "start": 0.71,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.36,
+        "pitch": 60,
+        "start": 0.99,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.28,
+        "pitch": 54,
+        "start": 1.27,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.2,
+        "pitch": 51,
+        "start": 1.55,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.12,
+        "pitch": 62,
+        "start": 1.83,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": -0.04,
+        "pitch": 56,
+        "start": 2.11,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.04,
+        "pitch": 60,
+        "start": 2.39,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.12,
+        "pitch": 61,
+        "start": 2.67,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.2,
+        "pitch": 71,
+        "start": 2.95,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.28,
+        "pitch": 59,
+        "start": 3.23,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.36,
+        "pitch": 57,
+        "start": 3.51,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.44,
+        "pitch": 59,
+        "start": 3.79,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.52,
+        "pitch": 52,
+        "start": 4.07,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.24,
+        "pan": 0.6,
+        "pitch": 68,
+        "start": 4.35,
+        "velocity": 0.8
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.25,
+        "pitch": 49,
+        "start": 0.05,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.2167,
+        "pitch": 47,
+        "start": 0.61,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.1833,
+        "pitch": 39,
+        "start": 1.17,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.15,
+        "pitch": 48,
+        "start": 1.73,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.1167,
+        "pitch": 42,
+        "start": 2.29,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.0833,
+        "pitch": 39,
+        "start": 2.85,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.05,
+        "pitch": 50,
+        "start": 3.41,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": -0.0167,
+        "pitch": 44,
+        "start": 3.97,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.0167,
+        "pitch": 48,
+        "start": 4.53,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.05,
+        "pitch": 49,
+        "start": 5.09,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.0833,
+        "pitch": 59,
+        "start": 5.65,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.1167,
+        "pitch": 47,
+        "start": 6.21,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.15,
+        "pitch": 45,
+        "start": 6.77,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.1833,
+        "pitch": 47,
+        "start": 7.33,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.2167,
+        "pitch": 40,
+        "start": 7.89,
+        "velocity": 0.3
+      },
+      {
+        "duration": 0.616,
+        "pan": 0.25,
+        "pitch": 56,
+        "start": 8.45,
+        "velocity": 0.3
+      }
+    ],
+    "rms": 0.13245,
+    "sample_rate": 22050,
+    "spectral_centroid_hz": 658.84
+  },
+  "backend": "atlas-qpixl",
+  "creative_primitives": {
+    "angles": [],
+    "bits": [
+      63,
+      86,
+      128,
+      162,
+      181,
+      253,
+      264,
+      283,
+      287,
+      313,
+      323,
+      336,
+      359,
+      386,
+      404,
+      420,
+      443,
+      469,
+      470,
+      476,
+      492,
+      481,
+      228,
+      426,
+      115,
+      317,
+      201,
+      461,
+      210,
+      222,
+      135,
+      275
+    ],
+    "blur_reach": 2,
+    "blur_strength": 0.45000000000000007,
+    "distribution_l1_vs_uniform": 0.4950713483677825,
+    "entangle_strength": 0.7,
+    "entropy_bits": 8.728744549897852,
+    "fm_index": 1.5,
+    "gates": 0,
+    "max_outcome_probability": 0.003869594595744655,
+    "max_pair_mutual_information_bits": 0.0016733915029293472,
+    "mutual_information_bits": 0.00036197188677657014,
+    "n_qubits": 9,
+    "pair_mutual_information_bits": [
+      3.189e-05,
+      4.337e-05,
+      0.00060691,
+      0.00023989,
+      0.00013455,
+      3.295e-05,
+      0.00167339,
+      0.00013282
+    ],
+    "pitches": [
+      61,
+      59,
+      51,
+      60,
+      54,
+      51,
+      62,
+      56,
+      60,
+      61,
+      71,
+      59,
+      57,
+      59,
+      52,
+      68
+    ],
+    "qubit_marginals": [
+      0.496307,
+      0.510488,
+      0.492727,
+      0.491951,
+      0.493027,
+      0.497152,
+      0.494102,
+      0.507805,
+      0.527541
+    ],
+    "scene_count": 4,
+    "scene_pacing": [
+      9,
+      8,
+      9,
+      8
+    ],
+    "seed": 7808021261148314384,
+    "shots": 4096,
+    "spectral_entropy_normalised": 0.9698605055442058,
+    "timbre": "odd",
+    "use_reverb": true
+  },
+  "prompt": "the last negative of a dying star, developed in the dark",
+  "provenance": [
+    {
+      "choice": "entire-piece-creative-budget",
+      "detail": {
+        "backend": "aer",
+        "changed": 510,
+        "engine": "qpixl-v1",
+        "job_id": "7289362a-bb2d-4f50-a9b1-c57eacda1b05",
+        "machine": "aer",
+        "max_abs_change": 0.076693,
+        "mean_abs_change": 0.015182,
+        "note": "the engine encodes the caller's array into a quantum circuit, measures it, and returns the decoded values; the deviation from the input is the measurement",
+        "shots": 4096,
+        "values_returned": 512,
+        "values_sent": 512
+      },
+      "engine": "qpixl-v1",
+      "source": "atlas-qpixl"
+    },
+    {
+      "choice": "instrumentation-and-melody",
+      "detail": {
+        "fm_index": 1.5,
+        "lead_notes": 16,
+        "pad_notes": 16,
+        "spacing_seconds": 0.28,
+        "timbre": "odd"
+      },
+      "engine": "synth.render_fm/render_additive",
+      "source": "local-renderers"
+    },
+    {
+      "choice": "space-and-decay",
+      "detail": {
+        "fallback_reason": "TimeoutError: The read operation timed out",
+        "quantum_decision": "use_reverb=True",
+        "used_atlas": false
+      },
+      "engine": "synth.convolve_ir",
+      "source": "local-renderers"
+    },
+    {
+      "choice": "image-interference",
+      "detail": {
+        "applied_as": "haze layer, 25% weight",
+        "colour": false,
+        "fallback_reason": "",
+        "input_bytes": 41362,
+        "job_id": "1ead0576-0b57-4faa-87f0-42af5d08a679",
+        "output_bytes": 91695,
+        "outputs": [
+          "result:blur-v1-1ead0576.png"
+        ],
+        "params": {
+          "downscale": false,
+          "reach": 2.0,
+          "size": 320,
+          "strength": 0.45000000000000007,
+          "style": "rx"
+        },
+        "params_clamped": [
+          "reach: 2.0 -> 1 (max)"
+        ],
+        "used_atlas": true
+      },
+      "engine": "blur-v1",
+      "source": "atlas-media"
+    },
+    {
+      "choice": "image-morph",
+      "detail": {
+        "fallback_reason": "TimeoutError: The read operation timed out",
+        "used_atlas": false
+      },
+      "engine": "film.entangle_frames",
+      "source": "local-renderers"
+    },
+    {
+      "choice": "visual-structure-and-palette",
+      "detail": {
+        "blend_used_atlas": false,
+        "blur_reach": 2,
+        "blur_strength": 0.45000000000000007,
+        "entangle_strength": 0.7,
+        "palette_rgb": [
+          0.5,
+          1.0,
+          0.0
+        ],
+        "scene_pacing": [
+          9,
+          8,
+          9,
+          8
+        ],
+        "scenes": 4
+      },
+      "engine": "film.quantum_field / readout_texture / entangle_frames",
+      "source": "local-renderers"
+    }
+  ],
+  "reproducibility": {
+    "note": "Same prompt and seed reproduce identical bytes.",
+    "seed_derivation": "sha256(prompt) first 8 bytes as a big-endian int"
+  },
+  "seed": 7808021261148314384,
+  "version": "quantum-negative/0.1",
+  "video": {
+    "duration_seconds": 6.8,
+    "fps": 10,
+    "frames": 68,
+    "size": 320
+  }
+}

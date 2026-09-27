@@ -189,15 +189,34 @@ def readout_texture(qubit_marginals, size: int = 512) -> np.ndarray:
     return np.outer(bands, wave)
 
 
-def palette_from_angles(angles, size: int | None = None) -> np.ndarray:
-    """Map three rotation angles onto an RGB palette and a gradient image.
+def palette_from_angles(angles, size: int | None = None,
+                        saturation: float = 1.0) -> np.ndarray:
+    """Map rotation angles onto an RGB palette and a gradient image.
 
     Angles are in radians. Returns a (size, size, 3) float array in [0, 1].
+
+    Two things matter here, both learned from a real failure:
+
+    * The three channels are separated by 120 degrees of phase. Mapping three
+      raw angles independently lets all three land near the same value — and
+      with an angle set clustered near zero, `(sin(0)+1)/2` is 0.5 for every
+      channel, i.e. mid-grey. That is exactly what happened when the live
+      `qpixl-v1` backend supplied the angles and the render came out colourless.
+      A phase offset guarantees the channels differ, so the palette always
+      carries hue regardless of which backend produced the angles.
+    * `saturation` then pushes the channels away from mid-grey, so the palette is
+      actually visible rather than a near-neutral wash.
     """
     arr = np.asarray(list(angles), dtype=np.float64).ravel()
     if arr.size < 3:
         arr = np.concatenate([arr, np.zeros(3 - arr.size)])
-    rgb = np.clip((np.sin(arr[:3]) + 1.0) / 2.0, 0.0, 1.0)
+    base = float(arr[0])
+    phase = base + np.array([0.0, 2.0944, 4.1888])     # 0, 120, 240 degrees
+    # Fold the remaining angles in so every supplied value affects the palette.
+    spread = float(np.std(arr[1:4])) if arr.size > 1 else 0.0
+    rgb = (np.sin(phase + spread) + 1.0) / 2.0
+    if saturation != 1.0:
+        rgb = np.clip(0.5 + (rgb - 0.5) * saturation, 0.0, 1.0)
     if size is None:
         return rgb
     # Interpolate the three anchors across the image beside their complement.

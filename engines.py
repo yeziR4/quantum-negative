@@ -254,6 +254,8 @@ class MediaEngines:
         `application/octet-stream` then fails exactly this way, so the content
         type is inferred from the filename rather than left to the default.
         """
+        params, clamp_notes = self._clamp(engine_id, params)
+        self._last_clamp_notes = clamp_notes
         input_ids: dict[str, str] = {}
         for slot, (filename, blob) in (files or {}).items():
             ctype = mimetypes.guess_type(filename)[0] or "application/octet-stream"
@@ -312,6 +314,61 @@ class MediaEngines:
         return EngineResult(local_value, local_engine, False, reason=reason,
                             detail=detail or {})
 
+    # -- schema-driven parameter safety ------------------------------------
+
+    def _schema(self, engine_id: str) -> dict:
+        """Cache an engine's declared parameter schema."""
+        if not hasattr(self, "_schemas"):
+            self._schemas: dict[str, dict] = {}
+        if engine_id not in self._schemas:
+            try:
+                self._schemas[engine_id] = self.client.params_schema(engine_id) or {}
+            except Exception:                           # noqa: BLE001
+                self._schemas[engine_id] = {}
+        return self._schemas[engine_id]
+
+    def _clamp(self, engine_id: str, params: dict) -> tuple[dict, list[str]]:
+        """Clamp parameters to the bounds the engine's live schema declares.
+
+        The API answers `422 params do not match the engine schema` for an
+        out-of-range value, and the error names no field, which makes it opaque.
+        This cost real debugging time: the pipeline derived
+        `blur_reach = 1 + (n % 2)`, which yields 2, while `blur-v1` declares
+        `reach` as **0..1** — so every render silently fell back to the local
+        renderer because of one integer.
+
+        Rather than hard-code that single bound, the declared `minimum`/`maximum`
+        for each numeric parameter are read from the engine's schema and applied.
+        Returns the clamped params plus a note for every value that moved, so the
+        adjustment is recorded in the receipt instead of happening invisibly.
+        """
+        props = (self._schema(engine_id).get("props")
+                 or self._schema(engine_id).get("properties") or {})
+        if not props:
+            return params, []
+        out, notes = dict(params), []
+        for key, value in list(params.items()):
+            spec = props.get(key)
+            if not isinstance(spec, dict):
+                continue
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                continue
+            # anyOf/oneOf wrappers (nullable numbers) carry bounds inside.
+            candidates = [spec] + [c for c in (spec.get("anyOf") or [])
+                                   + (spec.get("oneOf") or [])
+                                   if isinstance(c, dict)]
+            lo = next((c.get("minimum") for c in candidates
+                       if c.get("minimum") is not None), None)
+            hi = next((c.get("maximum") for c in candidates
+                       if c.get("maximum") is not None), None)
+            if lo is not None and value < lo:
+                out[key] = lo
+                notes.append(f"{key}: {value} -> {lo} (min)")
+            elif hi is not None and value > hi:
+                out[key] = hi
+                notes.append(f"{key}: {value} -> {hi} (max)")
+        return out, notes
+
     # -- stages -----------------------------------------------------------
 
     def blur_image(self, field: np.ndarray, *, strength: float = 0.5,
@@ -352,6 +409,7 @@ class MediaEngines:
                                    keep_colour=colour)
             return EngineResult(out, engine, True, detail={
                 "job_id": job_id, "params": params,
+                "params_clamped": getattr(self, "_last_clamp_notes", []),
                 "input_bytes": len(png), "output_bytes": len(blobs[0]),
                 "outputs": names, "colour": colour,
             })
