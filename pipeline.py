@@ -426,17 +426,23 @@ class AtlasBackend:
 class QpixlBackend:
     """`qpixl-v1` — encode OUR OWN array into a quantum circuit and measure it.
 
-    This is the closest thing the platform offers to a general-purpose
-    quantum transform of caller-supplied data, and it is what makes a genuine
-    "the quantum computer processed my material" claim possible without the
-    `run_quantum` feature.
+    This is the platform's general-purpose quantum transform of caller-supplied
+    data, and it runs in two modes:
 
-    Verified live: the engine takes a flat array of floats, encodes each value
-    into a quantum state, measures, and returns the decoded values. The
-    round-trip is lossy in a small, measurable way (0.35 came back as 0.3587,
-    0.70 as 0.6797 on a 1024-shot run), and that deviation IS the quantum
-    measurement — so the piece genuinely carries the result of a quantum
-    process applied to material we chose.
+    * ``mode="emu"`` — the platform's Aer simulator. Fast (seconds); the
+      round-trip deviates from the input by ~0.015 at 4,096 shots.
+    * ``mode="qpu"`` — **real IBM hardware**. Verified live on ``ibm_fez``: a
+      128-shot run took ~5 minutes wall clock (2 QPU-seconds) and returned IBM
+      job ``davtqqg4oijs73e86h7g``. The deviation is *far* larger — up to 0.31 on
+      the same values — because that is what real, noisy silicon does to the
+      encoding.
+
+    That gap is the point. The emulated run shows what the circuit does without
+    noise; the QPU run shows what it does on a physical quantum computer, and
+    both are recorded so the difference stays inspectable.
+
+    QPU mode requires an explicit ``backend_name``: the API rejects ``mode=qpu``
+    without one ("mothbackend has no least-busy auto-select").
 
     Costs 1 credit per run. Shots are capped at 8192 unless `allow_high_shots`.
     """
@@ -446,26 +452,54 @@ class QpixlBackend:
     #: 2^n destinations, so a 9-qubit run returns 512 values.
     DEFAULT_QUBITS = 9
 
-    def __init__(self, client, shots: int = 4096, machine: str = "aer"):
+    #: QPU payload size. `ibm_fez` rejects 512 values outright:
+    #: "512 values exceed ibm_fez's data-qubit capacity of 448". A hardware run
+    #: therefore uses 8 qubits = 256 values, which fits comfortably.
+    DEFAULT_QPU_QUBITS = 8
+
+    #: Named device used for QPU runs; ibm_fez is what the API itself suggests.
+    DEFAULT_QPU_BACKEND = "ibm_fez"
+
+    def __init__(self, client, shots: int = 4096, machine: str = "aer",
+                 mode: str = "emu", backend_name: str | None = None,
+                 timeout: float = 2400.0):
+        if mode not in ("emu", "qpu"):
+            raise ValueError("mode must be 'emu' or 'qpu'")
         self.client = client
         self.shots = shots
         self.machine = machine
+        self.mode = mode
+        self.backend_name = backend_name or self.DEFAULT_QPU_BACKEND
+        # A real QPU run spent ~5 minutes wall clock on 128 shots; the deadline
+        # for a larger payload is generous but not unlimited.
+        self.timeout = timeout
         self.last_detail: dict = {}
 
     def primitives(self, seed: int) -> tuple[CreativePrimitives, list[Provenance]]:
-        n = self.DEFAULT_QUBITS
+        # A hardware run must fit the device: ibm_fez allows 448 values, so QPU
+        # mode sends 256 while the emulator can afford 512.
+        n = self.DEFAULT_QPU_QUBITS if self.mode == "qpu" else self.DEFAULT_QUBITS
         dim = 1 << n
         # The input array is derived deterministically from the prompt seed, so
         # the same prompt always sends the same material to the engine.
         rng = np.random.default_rng(seed)
         source = rng.uniform(0.0, 1.0, dim).tolist()
 
-        job = self.client.submit("qpixl-v1", params={
-            "values": source, "shots": int(self.shots),
-            "mode": "emu", "machine": self.machine,
-        })
+        params = {"values": source, "shots": int(self.shots)}
+        if self.mode == "qpu":
+            # The API refuses mode=qpu without a named device, and a QPU job
+            # needs a much longer wait: a 128-shot run took ~5 minutes.
+            params["mode"] = "qpu"
+            params["backend_name"] = self.backend_name
+            poll, timeout = 10.0, self.timeout
+        else:
+            params["mode"] = "emu"
+            params["machine"] = self.machine
+            poll, timeout = 2.0, 600.0
+
+        job = self.client.submit("qpixl-v1", params=params)
         job_id = job["job_id"]
-        self.client.wait(job_id, poll=2.0, timeout=600, verbose=False)
+        self.client.wait(job_id, poll=poll, timeout=timeout, verbose=False)
         result = self.client.result(job_id)
 
         inner = None
@@ -517,20 +551,33 @@ class QpixlBackend:
         # Quantify the round-trip: how much did the quantum process actually
         # change the material? This is the honest measure of its contribution.
         deltas = [abs(a - b) for a, b in zip(source, recovered)]
+        inner_d = inner if isinstance(inner, dict) else {}
         self.last_detail = {
-            "job_id": job_id, "engine": "qpixl-v1", "machine": self.machine,
+            "job_id": job_id, "engine": "qpixl-v1",
+            "mode": self.mode,
+            "machine": self.machine if self.mode == "emu" else None,
+            # Provenance for a hardware run: which physical device, IBM's own job
+            # id, and how much QPU time it consumed. This is the evidence that
+            # distinguishes a real QPU run from a simulated one.
+            "qpu_backend": self.backend_name if self.mode == "qpu" else None,
+            "ibm_job_id": inner_d.get("ibm_job_id"),
+            "qpu_seconds": inner_d.get("qpu_seconds"),
             "shots": self.shots, "values_sent": len(source),
             "values_returned": len(recovered),
             "mean_abs_change": round(sum(deltas) / len(deltas), 6),
             "max_abs_change": round(max(deltas), 6),
             "changed": sum(1 for d in deltas if d > 1e-9),
-            "backend": (inner or {}).get("backend") if isinstance(inner, dict) else None,
+            "backend": inner_d.get("backend"),
             "note": ("the engine encodes the caller's array into a quantum "
                      "circuit, measures it, and returns the decoded values; the "
-                     "deviation from the input is the measurement"),
+                     "deviation from the input is the measurement"
+                     + (" — performed on real quantum hardware" if self.mode == "qpu"
+                        else "")),
         }
         prov = [Provenance(choice="entire-piece-creative-budget",
-                           source=self.name, engine="qpixl-v1",
+                           source=("atlas-qpu" if self.mode == "qpu" else self.name),
+                           engine="qpixl-v1" + (f" on {self.backend_name}"
+                                                if self.mode == "qpu" else ""),
                            detail=self.last_detail)]
         return prim, prov
 

@@ -1,8 +1,8 @@
 {
   "artifact_sha256": {
-    "audio": "9305c18caafebf38a353b4ff23ca4a3ecf19e1a589b95a0f76997585554980c0",
-    "poster": "32701b33e76b77eaddcc3bcd0910894d2ee86901b6a33ffe9258e755e539ddc6",
-    "video": "9a47fe20fa4c99df06d0b60d62459310845c10d9b9da542a906477f7b48c2a58"
+    "audio": "4efc6b73d30fdf72640e9dd5d0a49bc5e2a69b9e3d0bf9e2f6ec7a32612d88e8",
+    "poster": "c63f1ca0bf8d7880ee6c1eaaa5b92b675e1fcc58396d1b099b630b071e6013a7",
+    "video": "44395b6fc7921f5f25f8f72df78ce6ce354f75938324419a31f6074ea57b0a74"
   },
   "artifacts": {
     "audio": "quantum_negative.wav",
@@ -14,330 +14,330 @@
       {
         "duration": 0.24,
         "pan": -0.6,
-        "pitch": 61,
+        "pitch": 55,
         "start": 0.15,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": -0.52,
-        "pitch": 59,
+        "pitch": 54,
         "start": 0.43,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": -0.44,
-        "pitch": 51,
+        "pitch": 49,
         "start": 0.71,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": -0.36,
-        "pitch": 60,
+        "pitch": 55,
         "start": 0.99,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": -0.28,
-        "pitch": 54,
+        "pitch": 51,
         "start": 1.27,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": -0.2,
-        "pitch": 51,
+        "pitch": 61,
         "start": 1.55,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": -0.12,
-        "pitch": 62,
+        "pitch": 70,
         "start": 1.83,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": -0.04,
-        "pitch": 56,
+        "pitch": 58,
         "start": 2.11,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": 0.04,
-        "pitch": 60,
+        "pitch": 61,
         "start": 2.39,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": 0.12,
-        "pitch": 61,
+        "pitch": 71,
         "start": 2.67,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": 0.2,
-        "pitch": 71,
+        "pitch": 57,
         "start": 2.95,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": 0.28,
-        "pitch": 59,
+        "pitch": 51,
         "start": 3.23,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": 0.36,
-        "pitch": 57,
+        "pitch": 49,
         "start": 3.51,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": 0.44,
-        "pitch": 59,
+        "pitch": 70,
         "start": 3.79,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": 0.52,
-        "pitch": 52,
+        "pitch": 63,
         "start": 4.07,
         "velocity": 0.8
       },
       {
         "duration": 0.24,
         "pan": 0.6,
-        "pitch": 68,
+        "pitch": 54,
         "start": 4.35,
         "velocity": 0.8
       },
       {
         "duration": 0.616,
         "pan": -0.25,
-        "pitch": 49,
+        "pitch": 43,
         "start": 0.05,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": -0.2167,
-        "pitch": 47,
+        "pitch": 42,
         "start": 0.61,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": -0.1833,
-        "pitch": 39,
+        "pitch": 37,
         "start": 1.17,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": -0.15,
-        "pitch": 48,
+        "pitch": 43,
         "start": 1.73,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": -0.1167,
-        "pitch": 42,
+        "pitch": 39,
         "start": 2.29,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": -0.0833,
-        "pitch": 39,
+        "pitch": 49,
         "start": 2.85,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": -0.05,
-        "pitch": 50,
+        "pitch": 58,
         "start": 3.41,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": -0.0167,
-        "pitch": 44,
+        "pitch": 46,
         "start": 3.97,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": 0.0167,
-        "pitch": 48,
+        "pitch": 49,
         "start": 4.53,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": 0.05,
-        "pitch": 49,
+        "pitch": 59,
         "start": 5.09,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": 0.0833,
-        "pitch": 59,
+        "pitch": 45,
         "start": 5.65,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": 0.1167,
-        "pitch": 47,
+        "pitch": 39,
         "start": 6.21,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": 0.15,
-        "pitch": 45,
+        "pitch": 37,
         "start": 6.77,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": 0.1833,
-        "pitch": 47,
+        "pitch": 58,
         "start": 7.33,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": 0.2167,
-        "pitch": 40,
+        "pitch": 51,
         "start": 7.89,
         "velocity": 0.3
       },
       {
         "duration": 0.616,
         "pan": 0.25,
-        "pitch": 56,
+        "pitch": 42,
         "start": 8.45,
         "velocity": 0.3
       }
     ],
-    "rms": 0.13245,
+    "rms": 0.188424,
     "sample_rate": 22050,
-    "spectral_centroid_hz": 658.84
+    "spectral_centroid_hz": 697.86
   },
   "backend": "atlas-qpixl",
   "creative_primitives": {
     "angles": [],
     "bits": [
+      182,
+      131,
+      1,
+      82,
+      228,
       63,
-      86,
+      122,
+      135,
+      188,
+      48,
+      84,
+      253,
+      26,
+      222,
+      190,
+      206,
       128,
       162,
-      181,
-      253,
-      264,
-      283,
-      287,
-      313,
-      323,
-      336,
-      359,
-      386,
-      404,
-      420,
-      443,
-      469,
-      470,
-      476,
-      492,
-      481,
-      228,
-      426,
-      115,
-      317,
-      201,
-      461,
+      234,
+      53,
+      22,
       210,
-      222,
-      135,
-      275
+      23,
+      97,
+      229,
+      86,
+      41,
+      46,
+      102,
+      0,
+      49,
+      117
     ],
-    "blur_reach": 2,
-    "blur_strength": 0.45000000000000007,
-    "distribution_l1_vs_uniform": 0.4950713483677825,
-    "entangle_strength": 0.7,
-    "entropy_bits": 8.728744549897852,
+    "blur_reach": 1,
+    "blur_strength": 0.35,
+    "distribution_l1_vs_uniform": 0.35153482356203397,
+    "entangle_strength": 0.4,
+    "entropy_bits": 7.867877880978867,
     "fm_index": 1.5,
     "gates": 0,
-    "max_outcome_probability": 0.003869594595744655,
-    "max_pair_mutual_information_bits": 0.0016733915029293472,
-    "mutual_information_bits": 0.00036197188677657014,
-    "n_qubits": 9,
+    "max_outcome_probability": 0.007184849926587268,
+    "max_pair_mutual_information_bits": 0.0016731457523044453,
+    "mutual_information_bits": 0.0004147088268166644,
+    "n_qubits": 8,
     "pair_mutual_information_bits": [
-      3.189e-05,
-      4.337e-05,
-      0.00060691,
-      0.00023989,
-      0.00013455,
-      3.295e-05,
-      0.00167339,
-      0.00013282
+      0.00167315,
+      0.00013185,
+      5.99e-05,
+      0.00022513,
+      0.00019601,
+      0.00047556,
+      0.00014138
     ],
     "pitches": [
-      61,
-      59,
-      51,
-      60,
+      55,
       54,
+      49,
+      55,
       51,
-      62,
-      56,
-      60,
+      61,
+      70,
+      58,
       61,
       71,
-      59,
       57,
-      59,
-      52,
-      68
+      51,
+      49,
+      70,
+      63,
+      54
     ],
     "qubit_marginals": [
-      0.496307,
-      0.510488,
-      0.492727,
-      0.491951,
-      0.493027,
-      0.497152,
-      0.494102,
-      0.507805,
-      0.527541
+      0.496885,
+      0.504907,
+      0.487639,
+      0.471443,
+      0.503223,
+      0.500665,
+      0.488909,
+      0.500243
     ],
-    "scene_count": 4,
+    "scene_count": 6,
     "scene_pacing": [
       9,
       8,
       9,
-      8
+      10,
+      10,
+      10
     ],
     "seed": 7808021261148314384,
-    "shots": 4096,
-    "spectral_entropy_normalised": 0.9698605055442058,
-    "timbre": "odd",
+    "shots": 256,
+    "spectral_entropy_normalised": 0.9834847351223583,
+    "timbre": "oct",
     "use_reverb": true
   },
   "prompt": "the last negative of a dying star, developed in the dark",
@@ -345,20 +345,24 @@
     {
       "choice": "entire-piece-creative-budget",
       "detail": {
-        "backend": "aer",
-        "changed": 510,
+        "backend": "ibm_fez",
+        "changed": 256,
         "engine": "qpixl-v1",
-        "job_id": "7289362a-bb2d-4f50-a9b1-c57eacda1b05",
-        "machine": "aer",
-        "max_abs_change": 0.076693,
-        "mean_abs_change": 0.015182,
-        "note": "the engine encodes the caller's array into a quantum circuit, measures it, and returns the decoded values; the deviation from the input is the measurement",
-        "shots": 4096,
-        "values_returned": 512,
-        "values_sent": 512
+        "ibm_job_id": "davtvktj371s73dnhqsg",
+        "job_id": "a566a3ad-e03a-46a1-a53b-df97cafb3823",
+        "machine": null,
+        "max_abs_change": 0.449485,
+        "mean_abs_change": 0.103666,
+        "mode": "qpu",
+        "note": "the engine encodes the caller's array into a quantum circuit, measures it, and returns the decoded values; the deviation from the input is the measurement \u2014 performed on real quantum hardware",
+        "qpu_backend": "ibm_fez",
+        "qpu_seconds": 2,
+        "shots": 256,
+        "values_returned": 256,
+        "values_sent": 256
       },
-      "engine": "qpixl-v1",
-      "source": "atlas-qpixl"
+      "engine": "qpixl-v1 on ibm_fez",
+      "source": "atlas-qpu"
     },
     {
       "choice": "instrumentation-and-melody",
@@ -367,7 +371,7 @@
         "lead_notes": 16,
         "pad_notes": 16,
         "spacing_seconds": 0.28,
-        "timbre": "odd"
+        "timbre": "oct"
       },
       "engine": "synth.render_fm/render_additive",
       "source": "local-renderers"
@@ -375,12 +379,30 @@
     {
       "choice": "space-and-decay",
       "detail": {
-        "fallback_reason": "TimeoutError: The read operation timed out",
+        "fallback_reason": "",
+        "input_bytes": 901092,
+        "input_sr": 22050,
+        "job_id": "db3b5d30-092b-43b4-acc1-9a5dade20084",
+        "note": "ir measured by the engine; the JSON ir output is a reusable envelope and is not a WAV input",
+        "output_bytes": 975180,
+        "output_sr": 22050,
+        "outputs": [
+          "result:retrocausal-echo-v1-db3b5d30-result.wav",
+          "ir:retrocausal-echo-v1-db3b5d30-ir.json",
+          "taps:retrocausal-echo-v1-db3b5d30-taps.json"
+        ],
+        "params": {
+          "decay": 0.9,
+          "emit": "audio",
+          "mix": 0.32,
+          "output_format": "pcm_16",
+          "sr": 22050
+        },
         "quantum_decision": "use_reverb=True",
-        "used_atlas": false
+        "used_atlas": true
       },
-      "engine": "synth.convolve_ir",
-      "source": "local-renderers"
+      "engine": "retrocausal-echo-v1",
+      "source": "atlas-media"
     },
     {
       "choice": "image-interference",
@@ -388,22 +410,20 @@
         "applied_as": "haze layer, 25% weight",
         "colour": false,
         "fallback_reason": "",
-        "input_bytes": 41362,
-        "job_id": "1ead0576-0b57-4faa-87f0-42af5d08a679",
-        "output_bytes": 91695,
+        "input_bytes": 31742,
+        "job_id": "7c07f0df-a542-4b3b-88eb-d27ab56d572a",
+        "output_bytes": 74539,
         "outputs": [
-          "result:blur-v1-1ead0576.png"
+          "result:blur-v1-7c07f0df.png"
         ],
         "params": {
           "downscale": false,
-          "reach": 2.0,
+          "reach": 1.0,
           "size": 320,
-          "strength": 0.45000000000000007,
+          "strength": 0.35,
           "style": "rx"
         },
-        "params_clamped": [
-          "reach: 2.0 -> 1 (max)"
-        ],
+        "params_clamped": [],
         "used_atlas": true
       },
       "engine": "blur-v1",
@@ -412,19 +432,30 @@
     {
       "choice": "image-morph",
       "detail": {
-        "fallback_reason": "TimeoutError: The read operation timed out",
-        "used_atlas": false
+        "fallback_reason": "",
+        "input_bytes": 147301,
+        "job_id": "5dfbd519-5b50-40a3-8ad7-71fbfd5a9227",
+        "output_bytes": 118442,
+        "outputs": [
+          "result:telablur-v1-5dfbd519.png"
+        ],
+        "params": {
+          "direction": "full",
+          "downscale": true,
+          "strength": 0.4
+        },
+        "used_atlas": true
       },
-      "engine": "film.entangle_frames",
-      "source": "local-renderers"
+      "engine": "telablur-v1",
+      "source": "atlas-media"
     },
     {
       "choice": "visual-structure-and-palette",
       "detail": {
-        "blend_used_atlas": false,
-        "blur_reach": 2,
-        "blur_strength": 0.45000000000000007,
-        "entangle_strength": 0.7,
+        "blend_used_atlas": true,
+        "blur_reach": 1,
+        "blur_strength": 0.35,
+        "entangle_strength": 0.4,
         "palette_rgb": [
           0.5,
           1.0,
@@ -434,12 +465,14 @@
           9,
           8,
           9,
-          8
+          10,
+          10,
+          10
         ],
-        "scenes": 4
+        "scenes": 6
       },
-      "engine": "film.quantum_field / readout_texture / entangle_frames",
-      "source": "local-renderers"
+      "engine": "film.quantum_field / readout_texture / entangle_frames / telablur-v1",
+      "source": "atlas-media"
     }
   ],
   "reproducibility": {
@@ -449,9 +482,9 @@
   "seed": 7808021261148314384,
   "version": "quantum-negative/0.1",
   "video": {
-    "duration_seconds": 6.8,
+    "duration_seconds": 11.2,
     "fps": 10,
-    "frames": 68,
+    "frames": 112,
     "size": 320
   }
 }
