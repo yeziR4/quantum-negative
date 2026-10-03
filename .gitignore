@@ -45,3 +45,8 @@ dist/
 .git_token
 .moth_api_key
 
+
+# large generated video intermediates - rebuild with build_video_assets.py
+video_assets/*.mp4
+video_assets/_*
+
