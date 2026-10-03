@@ -34,6 +34,8 @@ _mock_output.json
 _mock_upload.bin
 webapp-test.log
 _live_*.bin
+comparison/simulator/
+comparison/hardware/
 
 # ---- distribution artifacts ---------------------------------------------
 # Built by make_bundle.py; regenerate rather than commit.

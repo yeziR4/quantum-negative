@@ -1,0 +1,42 @@
+{
+  "comparison": {
+    "elapsed_seconds": {
+      "hardware": 278.4,
+      "simulator": 833.9
+    },
+    "first_frame_mean_abs_difference": 0.026369,
+    "hardware_over_simulator": {
+      "max_abs_change_ratio": 10.7,
+      "mean_abs_change_ratio": 8.6
+    },
+    "modes": [
+      {
+        "device": "aer",
+        "engine": "qpixl-v1",
+        "ibm_job_id": [],
+        "max_abs_change": 0.041217,
+        "mean_abs_change": 0.010051,
+        "mode": "simulator (aer)",
+        "qpu_seconds": 0,
+        "shots": 8192,
+        "values": 512,
+        "values_changed": 510
+      },
+      {
+        "device": "ibm_fez",
+        "engine": "qpixl-v1",
+        "ibm_job_id": "db0ap9s92g1c739a6cq0",
+        "max_abs_change": 0.441521,
+        "mean_abs_change": 0.085943,
+        "mode": "hardware (ibm)",
+        "qpu_seconds": 4,
+        "shots": 8192,
+        "values": 256,
+        "values_changed": 256
+      }
+    ],
+    "prompt": "the last negative of a dying star, developed in the dark",
+    "same_seed": true,
+    "seed": 7808021261148314384
+  }
+}
