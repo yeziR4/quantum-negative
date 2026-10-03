@@ -1,146 +1,261 @@
-# Airtable copy-paste blocks
+# Airtable submission — written against the ACTUAL form
 
-Sized for a form that may still have a short character limit. The mods reported
-a 100-character cap that was then "fixed", so each block below is written to be
-**usable at ~100 characters** and **better if you have more room**. Start with
-the short block; if the field accepts more, paste the longer one instead.
+Replaces the earlier version of this file, which was written from the hack
+website's challenge list rather than the form itself and therefore used **wrong
+challenge numbers**. The form is the authority. Corrected below.
 
-Repo: **https://github.com/yeziR4/quantum-negative** — put this in every form.
+**Deadline: 11:59 PM Pacific Time, Monday 5 October 2026.** (Pacific, not AoE.)
+The form also warns: "If we cannot watch the video, we cannot mark your work."
 
 ---
 
-## Every form, regardless of challenge
+## The actual challenge list (from the form)
 
-**Name / GitHub handle**
+| Form label | Our relevance |
+|---|---|
+| Beginner 1: One image, one engine | possible bonus — we have blur-v1 output + params |
+| Beginner 2: Make it audible | possible bonus — we have retrocausal-echo-v1 output |
+| Beginner 3: Three dimensions | no |
+| Intermediate 1: Moving image | **strong fit — we produce a film** |
+| Intermediate 2: Quantum game | strong fit — DEVELOP THE NEGATIVE |
+| Intermediate 3: Daisy chain | strong fit — we use many engines |
+| Intermediate 4: VST or AU | no |
+| Intermediate 5: Web app | strong fit — webapp.py |
+| Advanced 1: Quantum-native #1 | maybe — repo of a quantum application on media |
+| Advanced 2: Quantum-native #2 | **strong fit — the notebook** |
+| Guest challenge: FQxl challenge | unknown; needs checking |
+
+**Recommendation:** submit to **Advanced 2: Quantum-native #2** first (that is
+what the notebook is for), then **Intermediate 5: Web app**, then decide between
+**Intermediate 2: Quantum game** and **Intermediate 1: Moving image**.
+
+---
+
+## "Tell us about yourself / team"
+
+**Are you submitting as a team or as an individual?**
 
 ```
-Yezir (@yeziR4)
+Individual
 ```
 
-**Project title**
+**Team's name (if team) or your name (if individual)**
+
+```
+Yezir
+```
+
+**Main contact email address**
+
+```
+[FILL IN — the address you registered with]
+```
+
+**Main contact Discord handle**
+
+```
+[FILL IN — REQUIRED. This is the one field I cannot supply. It must match your
+Moth Discord account.]
+```
+
+**GitHub handle**
+
+```
+yeziR4
+```
+
+**Your occupation (if individual)**
+
+```
+[FILL IN — one line, whatever is true. See the checklist at the end.]
+```
+
+**Other URLs / vital context**
+
+```
+Repo: https://github.com/yeziR4/quantum-negative
+Simulator-vs-hardware comparison:
+https://github.com/yeziR4/quantum-negative/tree/master/comparison
+```
+
+---
+
+## "Tell us about your project"
+
+### Project title
 
 ```
 QUANTUM NEGATIVE
 ```
 
-**Repo link**
+### Elevator pitch — describe your project in one sentence
+
+```
+A prompt becomes a short film whose every creative decision is a measurement on a
+quantum circuit, rendered on real IBM quantum hardware and shipped with a receipt
+proving which engine produced each choice.
+```
+
+### Select your challenge
+
+**Advanced 2: Quantum-native #2**
+
+### Project description — required, 100–200 words
+
+Word count: **178** (form allows 100–200)
+
+```
+QUANTUM NEGATIVE turns a text prompt into a short audiovisual piece in which
+every creative decision is a measurement outcome of a quantum circuit. The
+classical code renders; it never chooses.
+
+The motivation is that a physical quantum computer is a genuinely
+non-deterministic device whose error is a property of the hardware rather than of
+the algorithm. The piece is built to make that visible rather than to hide it.
+
+A prompt is hashed to a seed. A 256-value array derived from that seed is encoded
+into a quantum circuit by qpixl-v1, measured on ibm_fez, and returned. The
+deviation between what was sent and what came back drives the melody, colour and
+structure. blur-v1 and telablur-v1 filter the image layer; retrocausal-echo-v1
+produces the reverb.
+
+The artifacts are a short film, a stereo score, a poster and a machine-readable
+provenance receipt. A companion comparison renders the same prompt on the Aer
+simulator and on real hardware: the simulator converges toward the exact circuit
+answer as shots rise, while the device settles at an error floor that sampling
+cannot remove.
+```
+
+### Technical description — required, 50–100 words
+
+Word count: **77** (form allows 50–100)
+
+```
+Built on the Moth Atlas REST API from a stdlib-only Python client. A nine-qubit
+statevector simulator was written from scratch for local work; Atlas supplies
+real execution. Engines used: qpixl-v1 (encode/measure/decode, on ibm_fez and
+Aer), blur-v1, telablur-v1 and retrocausal-echo-v1. QPU runs submit mode='qpu'
+with an explicit backend_name; emulation uses mode='emu' on the platform's Aer
+machine. Media is assembled with numpy and ffmpeg, and provenance is recorded per
+decision. 269 automated checks verify the physics and the output.
+```
+
+### Which Moth Atlas engines did you use? (multi-select)
+
+Tick only these five — we actually drove each one:
+
+- [x] **qpixl-v1** — the creative budget: encodes our array into a circuit, measures it
+- [x] **blur-v1** — image interference
+- [x] **telablur-v1** — two-image morph
+- [x] **retrocausal-echo-v1** — reverb and space on the score
+- [x] **tomography-api-v2** — probed while evaluating engines
+
+Other engines visible to the account, which we did **not** run: blur-core-v1,
+blur-v0, blur-midi-v1, coin-toss-v1, comet-qrng-v1, deep-fryer-v1,
+entanglement-shader-v1, graph-v1, labyrinth-v1, otoc-echo-v1, qdrive-api-v1,
+qrc-*, tamagotchi-*, tessa-image-v1. **Do not tick them.** `entanglement-shader-v1`
+in particular was called, but it returns shader source rather than an image, so
+we did not use its output.
+
+### QPU or emulation?
+
+```
+Both. The creative budget runs on real hardware — qpixl-v1 on ibm_fez, with the
+IBM job ids recorded in the repository (for example db0ap9s92g1c739a6cq0, 4
+QPU-seconds) — and the same engine also runs in emulation for the side-by-side
+comparison. The remaining stages use the platform's emulation.
+```
+
+### Code repository
 
 ```
 https://github.com/yeziR4/quantum-negative
 ```
 
----
-
-## Challenge 10 — Quantum-native 2  (Expert)  ← put your weight here
-
-**Short description (fits ~100 chars)**
+### Demo URL
 
 ```
-A quantum circuit decides every creative choice in a film; proof and receipts in the repo.
-```
-
-**Longer description (use if the field allows)**
-
-```
-A prompt becomes a short film in which every creative decision is a measurement outcome of a quantum circuit — melody, instrumentation, colour, scene structure and image operators all trace back to measurements. The notebook runs the full workflow end to end through the Moth Atlas API, and includes a simulator-versus-hardware comparison: the same prompt rendered on Aer and on ibm_fez, with the measured deviation from the input recorded for each (mean 0.010 vs 0.086, an 8.6x difference), plus the IBM job id and QPU seconds. Every render writes a provenance receipt naming the engine behind each decision, and 269 automated checks verify the physics and the output.
-```
-
-**Workflow summary (likely a separate field)**
-
-```
-Prompt -> SHA-256 -> seed. qpixl-v1 encodes a 256-value array into a quantum circuit on ibm_fez, measures it and returns the values; the deviation from the input drives the piece. blur-v1 and telablur-v1 process the image layer, retrocausal-echo-v1 the audio. Notebook shows the pipeline, the physics gates, the provenance receipt and the hardware comparison.
-```
-
-**Why it is quantum-native rather than quantum-decorated**
-
-```
-The circuit's pairwise mutual information matrix is the image's structure, and its measurement outcomes set the melody and pacing. The notebook also documents a bug where diagonal-only gates made the circuit a no-op on measurement statistics, and shows the fix.
+[FILL IN if you host the web app. Otherwise leave blank — the repo link covers it.]
 ```
 
 ---
 
-## Challenge 08 — Make a web app  (Intermediate)
+## Honest answers to the disclosure questions
 
-**Short description (fits ~100 chars)**
+These are asked plainly, so answer them plainly. Being caught hedging would cost
+more than the disclosure does.
 
-```
-Prompt to quantum-generated film in the browser, via several Atlas engines. Repo linked.
-```
-
-**Longer description (use if the field allows)**
+### Generative AI usage
 
 ```
-A web app that turns a prompt into a short film, score and poster, driving the Moth Atlas API from the browser. It reports per run which backend actually produced the media and whether an Atlas engine or the local fallback was used, so nothing is misattributed. Generation runs as a background job with real stage progress, and the page displays the quantum creative budget alongside a provenance table naming the engine behind every decision. Standard library only, no build step, runs with `python webapp.py`.
+Yes. The engineering was built collaboratively with an AI coding agent (DeepSeek
+Harness), which wrote the pipeline, the simulator, the Atlas client and the test
+suites, and ran the API jobs. All creative decisions in the artwork come from the
+quantum circuit's measurement outcomes, not from a language model: no generative
+model touches the melody, the image or the audio.
 ```
 
-**Includes the game (challenge 05) as a mode at `/game`.**
-
----
-
-## Challenge 05 — Quantum game  (Intermediate)
-
-**Short description (fits ~100 chars)**
+### What generative AI tools did you use?
 
 ```
-Develop a latent photograph by reading qubit marginals. Playable mode in the web app.
+DeepSeek Harness (agentic coding). No image-, audio- or video-generation models
+were used to create the artwork.
 ```
 
-**Longer description (use if the field allows)**
+### Non-Moth APIs
 
 ```
-DEVELOP THE NEGATIVE is a playable game in which you develop a latent photograph with quantum development passes. Each round asks a genuinely quantum question: if you measured qubit q right now, would it read 0 or 1? The answer is the Born-rule marginal of the live 8-qubit state, so you must read the quantum state to play. Correct reads apply a development pass and the image emerges; wrong reads ruin the plate. Scoring rewards reading early and penalises wrong answers, so guessing is actively bad: measured over 60 seeds, perfect play averages 1813 points and 8/8 correct reads, random guessing 828 and about 4/8. Playable at /game in the web app.
+No.
 ```
 
----
-
-## Challenge 01 — One image, one engine  (Beginner, £100)
-
-Only if the form allows extra entries — this is a bonus, not the main submission.
-
-**Short description**
+### Non-Moth API details
 
 ```
-Image passed through Atlas blur-v1 with the parameters used recorded in the repo.
-```
-
-**Workflow + parameters**
-
-```
-film.quantum_field produces a 320x320 grey field from the circuit's probability distribution, then Atlas blur-v1 processes it: strength 0.15, reach 1 (the engine caps reach at 1), style rx, downscale false, size 320. Output is tinted with a palette derived from the circuit's rotation angles. Parameters and the clamped values are recorded in comparison/simulator/receipt.json.
+Not applicable — no non-Moth APIs were used.
 ```
 
 ---
 
-## Challenge 02 — Make it audible  (Beginner, £100)
+## Media you must supply — the real gaps
 
-Bonus, only if there is room.
+| Field | Status |
+|---|---|
+| Poster art (required, 1:1 to 4:3) | **ready** — `demo/poster.png` (512×512, 1:1) |
+| Demo video (required, public link, ≤3 min) | **NOT MADE — the biggest gap** |
+| Additional images (up to 5) | **ready** — `comparison/side_by_side.png`, `qpu_demo/poster.png`, `demo/poster.png` |
+| Presentation slides (PDF) | optional — not made |
 
-**Short description**
+**The video is required, and the form says work cannot be marked without it.** It
+must contain the pitch, the technique and the results. Our existing film is under
+10 seconds and does not explain itself, so **it does not satisfy this.**
 
-```
-Score generated from quantum measurement outcomes, with Atlas retrocausal-echo-v1 reverb.
-```
+### Planned video (≈2 minutes, no editing skill needed)
 
-**Workflow**
+1. **0:00–0:20** — the film playing, no narration.
+2. **0:20–0:45** — the pitch over the poster: *every decision is a measurement on
+   a quantum circuit, and this one ran on real IBM hardware.*
+3. **0:45–1:20** — the comparison: simulator left, hardware right, the numbers
+   (0.010 vs 0.086, 8.6×). Say the point aloud: *the simulator approaches the
+   exact answer as you sample more; the device cannot, because its error is
+   physical.*
+4. **1:20–1:45** — the provenance receipt scrolling: every decision, the engine
+   behind it, the IBM job ID.
+5. **1:45–2:00** — the repo, and the 269 checks.
 
-```
-Measurement outcomes set the melody pitches and the instrument (additive or FM). The mix is sent to Atlas retrocausal-echo-v1 with decay 0.9, mix 0.32, emit audio, pcm_16. The engine returns three outputs — ir (JSON), result (WAV) and taps (JSON) — and the audio is selected by slot. Non-silent stereo at the reported sample rate; the receipt is in demo/receipt.json.
-```
+I can assemble all the visuals for this. What I cannot do is record your voice.
 
 ---
 
-## If a form asks you to attach a file
+## Checklist before submitting
 
-Use the bundle: `dist/quantum-negative-2026-09-26.zip` — self-describing, with a
-SHA-256 manifest, no credentials. Everything is also in the public repo, so a
-link is usually enough.
-
-## If a form asks about the judging criteria
-
-```
-Quality of execution: 269 automated checks across six suites, all passing. Artifacts validated as real media (ffprobe confirms H.264; WAV is stereo 16-bit); receipt hashes verified against the files.
-
-Depth of quantum and Atlas usage: a 9-qubit entangling circuit whose correlation matrix is the image structure. Real hardware: qpixl-v1 on ibm_fez, job db0ap9s92g1c739a6cq0, with a simulator-vs-hardware comparison showing an 8.6x larger deviation on silicon. Four Atlas engines driven by real files; feature gating and fallbacks reported honestly rather than hidden.
-
-Originality: the circuit's correlation structure is the material, not just a randomness source. The game makes the player read the live quantum state. Every decision carries a provenance receipt, and the same prompt reproduces the same bytes.
-```
+- [ ] **Discord handle** — required, must match your Moth Discord account.
+- [ ] **Occupation** — one true line. e.g. *Software engineer*, *Student*,
+      *Independent developer*.
+- [ ] **Demo video** — record ~2 minutes per the plan, upload to YouTube, and set
+      it **public** (the form specifically warns about this).
+- [ ] **Choose categories.** Recommended order: Advanced 2 (Quantum-native #2),
+      Intermediate 5 (Web app), Intermediate 2 (Quantum game), Intermediate 1
+      (Moving image).
+- [ ] **Find out what the FQxl guest challenge is** — it is not on the hack
+      website; it may or may not fit us. Ask in Discord.
+- [ ] Tick both permission boxes and the eligibility confirmation.
