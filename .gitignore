@@ -40,3 +40,8 @@ comparison/hardware/
 # ---- distribution artifacts ---------------------------------------------
 # Built by make_bundle.py; regenerate rather than commit.
 dist/
+
+# credentials - never commit
+.git_token
+.moth_api_key
+

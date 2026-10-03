@@ -22,30 +22,32 @@ QUANTUM NEGATIVE — a quantum-native film generator
 **One-line summary**
 
 ```
-A prompt becomes a short film whose melody, instrumentation, colour and structure are all measurement outcomes of a quantum circuit — with every decision recorded in a provenance receipt and the output byte-reproducible from the prompt.
+A prompt becomes a short film whose every creative decision is a measurement on a quantum circuit — run on real IBM quantum hardware, with a simulator-vs-hardware comparison and a provenance receipt for every decision.
 ```
 
 **Team / participants**
 
 ```
-[FILL IN — your name and GitHub handle]
+Yezir
+GitHub: https://github.com/yeziR4
+Solo entry.
 ```
 
 **Links**
 
 ```
-Notebook : QUANTUM_NEGATIVE.ipynb           (repo or drive link) [FILL IN]
-Web app  : [FILL IN if hosted, otherwise "run locally: python webapp.py"]
-Repo     : [FILL IN if public]
-Bundle   : dist/quantum-negative-<date>.zip   (self-verifying, ~2.1 MB)
-Demo     : demo/quantum_negative.mp4, demo/quantum_negative.wav, demo/poster.png
+Repo      : https://github.com/yeziR4/quantum-negative
+Notebook  : https://github.com/yeziR4/quantum-negative/blob/master/QUANTUM_NEGATIVE.ipynb
+Comparison: https://github.com/yeziR4/quantum-negative/tree/master/comparison
+Hardware  : https://github.com/yeziR4/quantum-negative/tree/master/qpu_demo
+Web app   : run locally — python webapp.py   (http://127.0.0.1:8000, game at /game)
+Demo      : demo/quantum_negative.mp4, demo/quantum_negative.wav, demo/poster.png
 ```
 
-The repository is a git repo with three commits and is ready to push. A standalone
-bundle is also built by `make_bundle.py`: it is self-describing (a `MANIFEST.json`
-with a SHA-256 per file), contains no credentials, and I verified it by extracting
-it to a clean directory and running all six suites there — **231/231 pass from the
-extraction**, so it needs no setup beyond Python, numpy, Pillow and ffmpeg.
+Everything is in the public repo: the simulator-vs-hardware comparison with the
+IBM job ids, a read-only provenance receipt for every render, and the six
+verification suites (269 checks, `python verify_*.py`). No credentials are
+committed — verified against GitHub's own file listing, not just locally.
 
 ---
 
