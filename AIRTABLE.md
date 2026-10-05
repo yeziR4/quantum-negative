@@ -48,15 +48,19 @@ Yezir
 **Main contact email address**
 
 ```
-[FILL IN — the address you registered with]
+yezirhasan@gmail.com
 ```
 
 **Main contact Discord handle**
 
 ```
-[FILL IN — REQUIRED. This is the one field I cannot supply. It must match your
-Moth Discord account.]
+___h__r
 ```
+
+⚠️ **Copy this from Discord, do not retype it.** It is 7 characters — three
+underscores, `h`, two underscores, `r` — and underscore runs are exactly the
+thing that gets silently mangled when typed by hand. If it does not match your
+Moth Discord account, the team cannot reach you for winner announcements.
 
 **GitHub handle**
 
@@ -67,7 +71,7 @@ yeziR4
 **Your occupation (if individual)**
 
 ```
-[FILL IN — one line, whatever is true. See the checklist at the end.]
+Independent researcher
 ```
 
 **Other URLs / vital context**
@@ -267,9 +271,10 @@ I can assemble all the visuals for this. What I cannot do is record your voice.
 - [x] **Demo video** — done: https://youtu.be/4eeO1za0FQg — verified public
       (`isUnlisted: false`), 112s, under the 3-minute cap.
 - [x] **Repo link** — done: https://github.com/yeziR4/quantum-negative
-- [ ] **Discord handle** — required, must match your Moth Discord account.
-- [ ] **Occupation** — one true line. e.g. *Software engineer*, *Student*,
-      *Independent developer*.
+- [x] **Discord handle** — `___h__r` (7 chars: 3 underscores, h, 2 underscores, r).
+      Copy it from Discord rather than typing it; a mismatch means they cannot
+      reach you about prizes.
+- [x] **Occupation** — Independent researcher
 - [ ] **Consider tidying the YouTube title.** It currently reads
       `Quantum Negative  Prompt as Quantum Measurement` — missing a colon, with a
       double space. Suggested: `QUANTUM NEGATIVE — a film whose every decision is
