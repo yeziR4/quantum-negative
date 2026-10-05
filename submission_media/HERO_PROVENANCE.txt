@@ -1,0 +1,16 @@
+﻿Hero image provenance (for the record)
+======================================
+file      : submission_media/poster_art_qpu_1024.png  (1024x1024, 1:1)
+generated : from a live qpixl-v1 run on ibm_fez
+IBM job   : db1mup2vog1s73ficjg0
+QPU time  : 3 seconds
+shots     : 4096
+seed      : 20261005
+mean abs change vs input : 0.095362
+
+The field is derived from the measured probability distribution returned by the
+device, so the hero image is a real hardware result rather than a staged render.
+Reproduce with:
+  python -B -c "from moth_client import MothClient; from pipeline import QpixlBackend; \
+    c=MothClient(); b=QpixlBackend(c, shots=4096, mode='qpu'); \
+    prim,_=b.primitives(seed=20261005)"
