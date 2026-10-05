@@ -175,10 +175,26 @@ https://github.com/yeziR4/quantum-negative
 ### Demo URL
 
 ```
-[FILL IN if you host the web app. Otherwise leave blank — the repo link covers it.]
+[Leave blank — the web app runs locally via `python webapp.py`. The video and the
+repo cover everything a judge needs.]
 ```
 
 ---
+
+## Media — all supplied
+
+| Field | Value |
+|---|---|
+| **Demo video** | **https://youtu.be/4eeO1za0FQg** — verified public, 112s (under the 3-min cap) |
+| **Poster art** | `demo/poster.png` — 512×512, 1:1 (form accepts 1:1 to 4:3) |
+| Additional images (up to 5) | `comparison/side_by_side.png`, `qpu_demo/poster.png`, `demo/poster.png` |
+| Presentation slides | not supplied (optional) |
+
+The video was verified with YouTube's own oEmbed endpoint (`HTTP 200` with title
+and author) and by reading the watch page, which reports `"isUnlisted": false`.
+So it is **genuinely public**, not unlisted — which is the failure the form warns
+about, and the most common way an otherwise good entry becomes unmarkable.
+
 
 ## Honest answers to the disclosure questions
 
@@ -248,14 +264,19 @@ I can assemble all the visuals for this. What I cannot do is record your voice.
 
 ## Checklist before submitting
 
+- [x] **Demo video** — done: https://youtu.be/4eeO1za0FQg — verified public
+      (`isUnlisted: false`), 112s, under the 3-minute cap.
+- [x] **Repo link** — done: https://github.com/yeziR4/quantum-negative
 - [ ] **Discord handle** — required, must match your Moth Discord account.
 - [ ] **Occupation** — one true line. e.g. *Software engineer*, *Student*,
       *Independent developer*.
-- [ ] **Demo video** — record ~2 minutes per the plan, upload to YouTube, and set
-      it **public** (the form specifically warns about this).
-- [ ] **Choose categories.** Recommended order: Advanced 2 (Quantum-native #2),
-      Intermediate 5 (Web app), Intermediate 2 (Quantum game), Intermediate 1
-      (Moving image).
-- [ ] **Find out what the FQxl guest challenge is** — it is not on the hack
-      website; it may or may not fit us. Ask in Discord.
+- [ ] **Consider tidying the YouTube title.** It currently reads
+      `Quantum Negative  Prompt as Quantum Measurement` — missing a colon, with a
+      double space. Suggested: `QUANTUM NEGATIVE — a film whose every decision is
+      a quantum measurement (Moth Hack 2026)`. Judges scanning many entries
+      benefit from seeing the event name.
+- [ ] **Choose categories.** Recommended order: **Advanced 2 (Quantum-native #2)**
+      first, then Intermediate 5 (Web app), then Intermediate 2 (Quantum game) or
+      Intermediate 1 (Moving image).
+- [ ] **Find out what the FQxl guest challenge is** — not on the hack website.
 - [ ] Tick both permission boxes and the eligibility confirmation.
